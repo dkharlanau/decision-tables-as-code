@@ -45,6 +45,18 @@ A Git-native format and validation layer for enterprise decision logic.
 - vendor-neutral where practical
 - interoperable with enterprise tools
 
+## Related projects
+
+- [Mapping as Code](https://github.com/dkharlanau/mapping-as-code)
+- [Transformation Graph](https://github.com/dkharlanau/transformation-graph)
+- [Interface as Code](https://github.com/dkharlanau/interface-as-code)
+- [Reconciliation as Code](https://github.com/dkharlanau/reconciliation-as-code)
+- [Process as Code](https://github.com/dkharlanau/process-as-code)
+- [Enterprise Change Graph](https://github.com/dkharlanau/enterprise-change-graph)
+- [Data Relationship Map](https://github.com/dkharlanau/data-relationship-map)
+- [Cutover Graph](https://github.com/dkharlanau/cutover-graph)
+- [Project Evidence Graph](https://github.com/dkharlanau/project-evidence-graph)
+
 ## Status
 
 Planning.
