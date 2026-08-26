@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -86,13 +87,11 @@ def run_scenarios(table: DecisionTable, document: Mapping[str, Any]) -> Scenario
 
         facts = raw.get("facts")
         expected = raw.get("expect")
-        as_of = raw.get("as_of")
+        as_of = _normalize_as_of(raw.get("as_of"), scenario_id)
         if not isinstance(facts, Mapping):
             raise ValueError(f"Scenario {scenario_id!r}: facts must be an object")
         if not isinstance(expected, Mapping):
             raise ValueError(f"Scenario {scenario_id!r}: expect must be an object")
-        if as_of is not None and not isinstance(as_of, str):
-            raise ValueError(f"Scenario {scenario_id!r}: as_of must be an ISO date string")
 
         results.append(_run_one(table, scenario_id, dict(facts), dict(expected), as_of=as_of))
 
@@ -166,3 +165,15 @@ def _run_one(
     if mismatches:
         return ScenarioResult(scenario_id, False, "; ".join(mismatches), facts, expected, actual)
     return ScenarioResult(scenario_id, True, "passed", facts, expected, actual)
+
+
+def _normalize_as_of(value: Any, scenario_id: str) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, str):
+        return value
+    raise ValueError(f"Scenario {scenario_id!r}: as_of must be an ISO date string")
