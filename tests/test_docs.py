@@ -9,7 +9,11 @@ LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 
 
 def test_local_markdown_links_resolve():
-    documents = [ROOT / "README.md", *sorted((ROOT / "docs").rglob("*.md"))]
+    documents = [
+        ROOT / "README.md",
+        *sorted((ROOT / "docs").rglob("*.md")),
+        *sorted((ROOT / "examples").rglob("README.md")),
+    ]
     broken: list[str] = []
 
     for document in documents:
