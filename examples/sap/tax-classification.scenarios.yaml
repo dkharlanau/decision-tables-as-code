@@ -1,0 +1,46 @@
+version: 1
+table: sap-tax-classification
+scenarios:
+  - id: de-business-with-tax-number
+    facts:
+      country: DE
+      customer_type: BUSINESS
+      tax_number_present: true
+    expect:
+      matched_rules: [eu-business-with-tax-number]
+      outputs:
+        tax_classification: "1"
+        review_required: false
+
+  - id: fr-business-missing-tax-number
+    facts:
+      country: FR
+      customer_type: BUSINESS
+      tax_number_present: false
+    expect:
+      matched_rules: [eu-business-missing-tax-number]
+      outputs:
+        tax_classification: REVIEW
+        review_required: true
+
+  - id: eu-consumer-does-not-require-review
+    facts:
+      country: DE
+      customer_type: CONSUMER
+      tax_number_present: false
+    expect:
+      matched_rules: [eu-consumer]
+      outputs:
+        tax_classification: "0"
+        review_required: false
+
+  - id: us-customer
+    facts:
+      country: US
+      customer_type: BUSINESS
+      tax_number_present: false
+    expect:
+      matched_rules: [us-customer]
+      outputs:
+        tax_classification: "0"
+        review_required: false
