@@ -1,8 +1,8 @@
 # Decision Tables as Code
 
-Git-native validation, testing, governance, semantic diff, and review for enterprise decision tables stored in spreadsheets or structured files.
+Git-native validation, testing, governance, semantic diff, review, and strict DMN interoperability for enterprise decision tables stored in spreadsheets or structured files.
 
-Business rules often live in Excel, migration workbooks, configuration tables, middleware filters, or runtime-specific rule editors. They are easy to change and difficult to review: conflicts hide between rows, boundary cases are tested manually, provenance disappears, and a pull request cannot explain what business behavior actually changed.
+Business rules often live in Excel, migration workbooks, configuration tables, middleware filters, DMN files, or runtime-specific rule editors. They are easy to change and difficult to review: conflicts hide between rows, boundary cases are tested manually, provenance disappears, and a pull request cannot explain what business behavior actually changed.
 
 Decision Tables as Code (`dtac`) provides a small vendor-neutral model and deterministic CLI so decision logic can be treated like source code without becoming unreadable to functional and business reviewers.
 
@@ -11,6 +11,7 @@ Decision Tables as Code (`dtac`) provides a small vendor-neutral model and deter
 | Problem | Guide | Runnable example |
 | --- | --- | --- |
 | Validate an Excel rule workbook | [Excel decision table validation](docs/use-cases/excel-decision-table-validation.md) | `examples/order-routing.csv` |
+| Import/export an ordinary DMN 1.4 decision table | [DMN 1.4 subset](docs/dmn.md) | `examples/dmn/routing-unique.dmn` |
 | Test approval/release thresholds | [Approval matrix](docs/use-cases/approval-matrix.md) | `examples/sap/approval-matrix.yaml` |
 | Govern master-data derivations | [Master-data derivation](docs/use-cases/master-data-derivation.md) | `examples/sap/customer-account-group-derivation.yaml` |
 | Make migration/cutover rules executable | [Migration rules](docs/use-cases/migration-rules.md) | `examples/effective-routing.yaml` |
@@ -24,7 +25,7 @@ See the [documentation home](docs/index.md), [architecture](docs/architecture.md
 ## What works now
 
 - canonical YAML/JSON decision-table model
-- `unique`, `first`, and `collect` hit policies
+- `unique`, `first`, and `collect` hit policies in the native model
 - equality, membership, ranges, wildcard, existence, and regex conditions
 - stable `DTxxx` structural/semantic diagnostics
 - duplicate, exact-conflict, proven UNIQUE-overlap, and FIRST-shadow analysis
@@ -35,6 +36,7 @@ See the [documentation home](docs/index.md), [architecture](docs/architecture.md
 - classified semantic diff: `breaking`, `potentially_breaking`, `non_breaking`, `governance_only`
 - machine-readable `dtac inspect` and rule-level `dtac explain`
 - CSV/XLSX import with explicit column mapping
+- strict DMN 1.4 import/export subset for UNIQUE/FIRST tables with explicit unsupported-semantics failures
 - deterministic Markdown/standalone HTML business-review reports
 - SARIF 2.1.0 and GitHub Actions annotations
 - JSON Schema and CI-ready CLI
@@ -103,6 +105,24 @@ dtac import examples/order-routing.csv \
 
 The same mapping works for XLSX after installing the optional `excel` dependency. See [spreadsheet importing](docs/importing-spreadsheets.md).
 
+## DMN 1.4 to Git and back
+
+Import the supported DMN 1.4 decision-table subset into canonical YAML:
+
+```bash
+dtac dmn-import examples/dmn/routing-unique.dmn \
+  --output /tmp/dmn-routing.yaml
+```
+
+Validate/test/diff the canonical table with the same Git workflow, then export it again when every construct is representable:
+
+```bash
+dtac dmn-export /tmp/dmn-routing.yaml \
+  --output /tmp/dmn-routing-roundtrip.dmn
+```
+
+The adapter is intentionally strict. It supports DMN 1.4 UNIQUE/FIRST decision tables and a limited FEEL unary-test/literal subset; unsupported hit policies, arbitrary FEEL, canonical governance/effective dates, DTAC `integer`, and semantically mismatched wildcard behavior fail explicitly rather than being approximated or dropped. See [DMN 1.4 interoperability](docs/dmn.md).
+
 ## Effective-dated rules
 
 Effective dates are explicit inputs to evaluation. The engine never substitutes today's date:
@@ -141,6 +161,7 @@ See [architecture](docs/architecture.md) and the [staged adoption guide](docs/ad
 ## Reference
 
 - [CLI reference](docs/cli-reference.md) — generated from the actual parser and checked in CI
+- [DMN 1.4 interoperability subset](docs/dmn.md)
 - [v1 specification](docs/specification.md)
 - [diagnostics](docs/diagnostics.md)
 - [rule analysis](docs/rule-analysis.md)
@@ -162,6 +183,6 @@ See [architecture](docs/architecture.md) and the [staged adoption guide](docs/ad
 
 ## Roadmap and status
 
-Working MVP. The model and CLI are usable, but v1 is still pre-stable. DMN interoperability, multi-table decision graphs, generated runtime adapters, and stronger compatibility proofs remain roadmap work.
+Working MVP. The model and CLI are usable, but v1 is still pre-stable. Multi-table decision graphs, generated runtime adapters, and stronger compatibility proofs remain roadmap work.
 
 See [ROADMAP.md](ROADMAP.md).
