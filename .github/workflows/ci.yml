@@ -30,6 +30,23 @@ jobs:
       - run: python -c 'import json; d=json.load(open("/tmp/inspect.json")); assert d["format_version"] == 1 and d["table"]["id"] == "order-routing"'
       - run: dtac diff examples/order-routing.yaml examples/order-routing-v2.yaml --fail-on never --output /tmp/diff.json
       - run: python -c 'import json; d=json.load(open("/tmp/diff.json")); assert d["format_version"] == 1 and d["changed"] and d["classification"] in {"potentially_breaking", "breaking"}'
+      - name: Verify organization policy packs
+        run: |
+          dtac policy-check examples/policy/governed-routing.yaml \
+            --policy policies/enterprise-governance.yaml \
+            --policy policies/sap-change-control.yaml \
+            --format json \
+            --output /tmp/policy-pass.json
+          python -c 'import json; d=json.load(open("/tmp/policy-pass.json")); assert d["ok"] and d["policy_ids"] == ["enterprise-governance","sap-change-control"] and d["summary"]["policy_findings"] == 0'
+          set +e
+          dtac policy-check examples/order-routing.yaml \
+            --policy policies/enterprise-governance.yaml \
+            --format json \
+            --output /tmp/policy-fail.json
+          status=$?
+          set -e
+          test "$status" -eq 1
+          python -c 'import json; d=json.load(open("/tmp/policy-fail.json")); assert not d["ok"] and {x["code"] for x in d["policy_diagnostics"]} == {"POL004"} and all(x["policy_id"] == "enterprise-governance" for x in d["policy_diagnostics"])'
       - name: Verify exhaustive behavioral compatibility witness
         run: |
           dtac compatibility examples/order-routing.yaml examples/order-routing-v2.yaml --output /tmp/compatibility.json
