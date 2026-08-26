@@ -9,6 +9,7 @@ from pathlib import Path
 from .coverage import analyze_coverage
 from .diff import semantic_diff
 from .engine import evaluate
+from .explain import explain_table
 from .importer import dump_yaml, import_spreadsheet, load_import_config
 from .inspect import inspect_table
 from .io import load_table
@@ -33,6 +34,12 @@ def build_parser() -> argparse.ArgumentParser:
     eval_parser.add_argument("table")
     eval_parser.add_argument("--facts", required=True, help="JSON object or @path/to/facts.json")
     eval_parser.add_argument("--as-of", help="Explicit YYYY-MM-DD date used for effective-dated rules")
+
+    explain_parser = sub.add_parser("explain", help="Explain why rules matched or were rejected")
+    explain_parser.add_argument("table")
+    explain_parser.add_argument("--facts", required=True, help="JSON object or @path/to/facts.json")
+    explain_parser.add_argument("--as-of", help="Explicit YYYY-MM-DD date used for effective-dated rules")
+    explain_parser.add_argument("--output", help="Write JSON explanation to a file instead of stdout")
 
     inspect_parser = sub.add_parser("inspect", help="Inspect a decision table as stable machine-readable JSON")
     inspect_parser.add_argument("table")
@@ -74,6 +81,8 @@ def main(argv: list[str] | None = None) -> int:
             return _validate(args.table, args.output_format, args.output, args.legacy_json)
         if args.command == "eval":
             return _eval(args.table, args.facts, args.as_of)
+        if args.command == "explain":
+            return _explain(args.table, args.facts, args.as_of, args.output)
         if args.command == "inspect":
             return _inspect(args.table, args.output)
         if args.command == "diff":
@@ -130,6 +139,19 @@ def _eval(path: str, raw_facts: str, as_of: str | None = None) -> int:
         raise ValueError("--facts must resolve to a JSON object")
     result = evaluate(table, facts, as_of=as_of)
     print(json.dumps(asdict(result), indent=2, default=str))
+    return 0
+
+
+def _explain(path: str, raw_facts: str, as_of: str | None, output_path: str | None) -> int:
+    facts = _read_json_arg(raw_facts)
+    if not isinstance(facts, dict):
+        raise ValueError("--facts must resolve to a JSON object")
+    payload = json.dumps(explain_table(load_table(path), facts, as_of=as_of), indent=2, default=str) + "\n"
+    if output_path:
+        Path(output_path).write_text(payload, encoding="utf-8")
+        print(f"Wrote {output_path}")
+    else:
+        print(payload, end="")
     return 0
 
 
