@@ -15,6 +15,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e '.[dev]'
       - run: pytest
@@ -33,6 +36,14 @@ jobs:
       - run: dtac coverage /tmp/imported.yaml
       - run: dtac test examples/order-routing.yaml examples/order-routing.scenarios.yaml
       - run: dtac test examples/effective-routing.yaml examples/effective-routing.scenarios.yaml
+      - name: Verify dependency-free JavaScript export
+        run: |
+          dtac js-export examples/order-routing.yaml --output /tmp/order-routing.mjs --types-output /tmp/order-routing.d.ts
+          grep -q "export function evaluate" /tmp/order-routing.mjs
+          grep -q "export interface DecisionResult" /tmp/order-routing.d.ts
+          node --input-type=module -e 'import("file:///tmp/order-routing.mjs").then(({evaluate}) => { const d=evaluate({country:"DE",customer_type:"B2B",order_value:6000}); if (JSON.stringify(d.matched_rule_ids)!==JSON.stringify(["de-b2b-high"])) process.exit(1); if (d.outputs.route!=="enterprise-desk" || d.outputs.approval!=="senior") process.exit(1); })'
+          dtac js-export examples/effective-routing.yaml --output /tmp/effective-routing.mjs
+          node --input-type=module -e 'import("file:///tmp/effective-routing.mjs").then(({evaluate}) => { const d=evaluate({country:"DE"},{asOf:"2027-01-01"}); if (JSON.stringify(d.matched_rule_ids)!==JSON.stringify(["de-new"]) || d.outputs.route!=="eu-new") process.exit(1); })'
       - name: Verify decision package execution and impact
         run: |
           dtac package-validate examples/package/order-approval/package.yaml
