@@ -106,6 +106,68 @@ dtac inspect <table> [--output <output>]
 | `table` | yes | — | — | — |
 | `--output` `<output>` | no | — | — | Write JSON inspection output to a file instead of stdout |
 
+## `dtac package-diff`
+
+```text
+dtac package-diff <before> <after> [--output <output>] [--fail-on <fail-on>]
+```
+
+| Argument | Required | Default | Choices | Help |
+| --- | --- | --- | --- | --- |
+| `before` | yes | — | — | — |
+| `after` | yes | — | — | — |
+| `--output` `<output>` | no | — | — | Write package diff JSON to a file instead of stdout |
+| `--fail-on` `<fail-on>` | no | `any` | `any`, `never` | — |
+
+## `dtac package-eval`
+
+```text
+dtac package-eval <manifest> --facts <facts> [--as-of <as-of>] [--output <output>]
+```
+
+| Argument | Required | Default | Choices | Help |
+| --- | --- | --- | --- | --- |
+| `manifest` | yes | — | — | — |
+| `--facts` `<facts>` | yes | — | — | JSON object or @path/to/facts.json |
+| `--as-of` `<as-of>` | no | — | — | Explicit YYYY-MM-DD date passed to effective-dated tables |
+| `--output` `<output>` | no | — | — | Write package result JSON to a file instead of stdout |
+
+## `dtac package-graph`
+
+```text
+dtac package-graph <manifest> [--format <output-format>] [--output <output>]
+```
+
+| Argument | Required | Default | Choices | Help |
+| --- | --- | --- | --- | --- |
+| `manifest` | yes | — | — | — |
+| `--format` `<output-format>` | no | `json` | `json`, `dot`, `mermaid` | — |
+| `--output` `<output>` | no | — | — | Write graph output to a file instead of stdout |
+
+## `dtac package-impact`
+
+```text
+dtac package-impact <manifest> --changed <changed> [--output <output>]
+```
+
+| Argument | Required | Default | Choices | Help |
+| --- | --- | --- | --- | --- |
+| `manifest` | yes | — | — | — |
+| `--changed` `<changed>` | yes | — | — | Changed table id; repeat for multiple tables |
+| `--output` `<output>` | no | — | — | Write impact JSON to a file instead of stdout |
+
+## `dtac package-validate`
+
+```text
+dtac package-validate <manifest> [--format <output-format>] [--output <output>]
+```
+
+| Argument | Required | Default | Choices | Help |
+| --- | --- | --- | --- | --- |
+| `manifest` | yes | — | — | — |
+| `--format` `<output-format>` | no | `text` | `text`, `json` | — |
+| `--output` `<output>` | no | — | — | Write validation output to a file instead of stdout |
+
 ## `dtac render`
 
 ```text

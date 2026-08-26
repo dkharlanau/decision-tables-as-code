@@ -1,0 +1,24 @@
+version: 1
+id: order-approval-flow
+metadata:
+  purpose: Demonstrate explicit multi-table decision dependencies and output bindings.
+tables:
+  - id: risk-classification
+    version: 1
+    path: risk-classification.yaml
+
+  - id: approval-decision
+    version: 1
+    path: approval-decision.yaml
+    depends_on:
+      - table: risk-classification
+        bind:
+          risk_level: risk_level
+
+  - id: fulfillment-route
+    version: 1
+    path: fulfillment-route.yaml
+    depends_on:
+      - table: approval-decision
+        bind:
+          approval_strategy: strategy

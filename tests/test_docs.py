@@ -9,7 +9,11 @@ LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 
 
 def test_local_markdown_links_resolve():
-    documents = [ROOT / "README.md", *sorted((ROOT / "docs").rglob("*.md"))]
+    documents = [
+        ROOT / "README.md",
+        *sorted((ROOT / "docs").rglob("*.md")),
+        *sorted((ROOT / "examples").rglob("README.md")),
+    ]
     broken: list[str] = []
 
     for document in documents:
@@ -35,6 +39,12 @@ def test_use_case_gallery_points_to_runnable_examples():
         "examples/effective-routing.scenarios.yaml",
         "examples/dmn/routing-unique.dmn",
         "examples/dmn/approval-first.dmn",
+        "examples/package/order-approval/package.yaml",
+        "examples/package/order-approval/risk-classification.yaml",
+        "examples/package/order-approval/approval-decision.yaml",
+        "examples/package/order-approval/fulfillment-route.yaml",
+        "examples/package/order-approval/README.md",
+        "schema/decision-package.schema.json",
         "examples/sap/approval-matrix.yaml",
         "examples/sap/approval-matrix.scenarios.yaml",
         "examples/sap/customer-account-group-derivation.yaml",
