@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -92,6 +93,31 @@ def test_release_verify_detects_unexpected_file(tmp_path: Path):
     (bundle / "unexpected.txt").write_text("not declared\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="unexpected: unexpected.txt"):
+        verify_release_bundle(bundle)
+
+
+def test_release_verify_detects_nested_reserved_name(tmp_path: Path):
+    bundle = tmp_path / "release"
+    create_release_bundle(TABLE, bundle)
+    nested = bundle / "evidence" / "manifest.json"
+    nested.write_text("{}\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match=r"unexpected: evidence/manifest\.json"):
+        verify_release_bundle(bundle)
+
+
+def test_release_verify_rejects_symlink(tmp_path: Path):
+    bundle = tmp_path / "release"
+    create_release_bundle(TABLE, bundle)
+    outside = tmp_path / "outside.txt"
+    outside.write_text("external\n", encoding="utf-8")
+    link = bundle / "external-link.txt"
+    try:
+        os.symlink(outside, link)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks are not available on this platform")
+
+    with pytest.raises(ValueError, match="must not contain symlinks: external-link.txt"):
         verify_release_bundle(bundle)
 
 
