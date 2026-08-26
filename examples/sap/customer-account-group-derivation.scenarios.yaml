@@ -1,0 +1,46 @@
+version: 1
+table: sap-customer-account-group-derivation
+scenarios:
+  - id: employee-overrides-commercial-context
+    facts:
+      source_system: LEGACY_A
+      customer_role: SOLD_TO
+      is_employee: true
+    expect:
+      matched_rules: [employee]
+      outputs:
+        account_group: ZEMP
+        bp_role: EMPLOYEE
+
+  - id: legacy-a-payer
+    facts:
+      source_system: LEGACY_A
+      customer_role: PAYER
+      is_employee: false
+    expect:
+      matched_rules: [legacy-a-payer]
+      outputs:
+        account_group: Z002
+        bp_role: FI_CUSTOMER
+
+  - id: legacy-b-ship-to
+    facts:
+      source_system: LEGACY_B
+      customer_role: SHIP_TO
+      is_employee: false
+    expect:
+      matched_rules: [legacy-b-commercial]
+      outputs:
+        account_group: Z101
+        bp_role: CUSTOMER
+
+  - id: crm-bill-to
+    facts:
+      source_system: CRM
+      customer_role: BILL_TO
+      is_employee: false
+    expect:
+      matched_rules: [crm-commercial]
+      outputs:
+        account_group: ZCRM
+        bp_role: CUSTOMER
