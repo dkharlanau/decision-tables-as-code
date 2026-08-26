@@ -10,13 +10,24 @@ portfolio:
   sap_proof: 10
   brand_value: 9
 
-status: planning
+status: working-mvp
 
 implementation:
   repository_created: true
-  implementation_status: not-started
+  implementation_status: mvp
+  package_version: 0.1.0
   codex_fit: 5/5
   sap_access_required: false
+
+capabilities:
+  - canonical-yaml-json-model
+  - validation
+  - evaluation
+  - finite-domain-coverage
+  - semantic-diff
+  - cli
+  - json-schema
+  - ci
 
 principles:
   - versionable
