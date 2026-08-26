@@ -1,0 +1,38 @@
+version: 1
+table: effective-routing
+scenarios:
+  - id: de-before-cutover
+    as_of: 2026-12-31
+    facts:
+      country: DE
+    expect:
+      matched_rules: [de-legacy]
+      outputs:
+        route: legacy-eu
+
+  - id: de-after-cutover
+    as_of: 2027-01-01
+    facts:
+      country: DE
+    expect:
+      matched_rules: [de-new]
+      outputs:
+        route: eu-new
+
+  - id: pl-before-cutover
+    as_of: 2026-12-31
+    facts:
+      country: PL
+    expect:
+      matched_rules: [pl-default]
+      outputs:
+        route: eu-standard
+
+  - id: pl-after-cutover
+    as_of: 2027-01-01
+    facts:
+      country: PL
+    expect:
+      matched_rules: [pl-default]
+      outputs:
+        route: eu-standard
