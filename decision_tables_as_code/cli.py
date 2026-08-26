@@ -9,7 +9,9 @@ from pathlib import Path
 from .coverage import analyze_coverage
 from .diff import semantic_diff
 from .engine import evaluate
+from .importer import dump_yaml, import_spreadsheet, load_import_config
 from .io import load_table
+from .model import table_from_mapping
 from .validate import has_errors, validate_table
 
 
@@ -33,6 +35,11 @@ def build_parser() -> argparse.ArgumentParser:
     coverage_parser.add_argument("table")
     coverage_parser.add_argument("--max-combinations", type=int, default=10_000)
 
+    import_parser = sub.add_parser("import", help="Import a CSV/XLSX decision table using an explicit mapping config")
+    import_parser.add_argument("source")
+    import_parser.add_argument("--config", required=True)
+    import_parser.add_argument("--output")
+
     return parser
 
 
@@ -48,6 +55,8 @@ def main(argv: list[str] | None = None) -> int:
             return _diff(args.before, args.after)
         if args.command == "coverage":
             return _coverage(args.table, args.max_combinations)
+        if args.command == "import":
+            return _import(args.source, args.config, args.output)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -94,6 +103,23 @@ def _coverage(path: str, max_combinations: int) -> int:
     }
     print(json.dumps(payload, indent=2, default=str))
     return 1 if result.uncovered or result.ambiguous else 0
+
+
+def _import(source: str, config_path: str, output_path: str | None) -> int:
+    document = import_spreadsheet(source, load_import_config(config_path))
+    table = table_from_mapping(document)
+    diagnostics = validate_table(table)
+    if has_errors(diagnostics):
+        for item in diagnostics:
+            print(f"{item.severity.upper():7} {item.code} {item.path}: {item.message}", file=sys.stderr)
+        return 1
+    rendered = dump_yaml(document)
+    if output_path:
+        Path(output_path).write_text(rendered, encoding="utf-8")
+        print(f"Wrote {output_path}")
+    else:
+        print(rendered, end="")
+    return 0
 
 
 def _read_json_arg(value: str):
