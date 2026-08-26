@@ -1,6 +1,6 @@
 # Decision Tables as Code
 
-Git-native validation, testing, governance, semantic diff, dependency graphs, portable runtimes, review, and strict DMN interoperability for enterprise decision tables stored in spreadsheets or structured files.
+Git-native validation, testing, governance, semantic diff, dependency graphs, portable runtimes, auditable releases, review, and strict DMN interoperability for enterprise decision tables stored in spreadsheets or structured files.
 
 Business rules often live in Excel, migration workbooks, configuration tables, middleware filters, DMN files, or runtime-specific rule editors. They are easy to change and difficult to review: conflicts hide between rows, boundary cases are tested manually, provenance disappears, related decisions drift apart, and a pull request cannot explain what business behavior or downstream decision may change.
 
@@ -11,6 +11,7 @@ Decision Tables as Code (`dtac`) provides a small vendor-neutral model and deter
 | Problem | Guide | Runnable example |
 | --- | --- | --- |
 | Validate an Excel rule workbook | [Excel decision table validation](docs/use-cases/excel-decision-table-validation.md) | `examples/order-routing.csv` |
+| Create an auditable release/change-control unit | [Decision release bundles](docs/release-bundles.md) | `dtac bundle examples/order-routing.yaml ...` |
 | Run reviewed rule logic in Node.js or browser code | [JavaScript runtime](docs/javascript-runtime.md) | `dtac js-export examples/order-routing.yaml` |
 | Connect multiple decisions and trace downstream impact | [Decision packages](docs/decision-packages.md) | `examples/package/order-approval/package.yaml` |
 | Import/export an ordinary DMN 1.4 decision table | [DMN 1.4 subset](docs/dmn.md) | `examples/dmn/routing-unique.dmn` |
@@ -37,6 +38,8 @@ See the [documentation home](docs/index.md), [architecture](docs/architecture.md
 - executable scenario packs, including explicit `as_of` cutover cases
 - classified semantic diff: `breaking`, `potentially_breaking`, `non_breaking`, `governance_only`
 - machine-readable `dtac inspect` and rule-level `dtac explain`
+- deterministic release bundles with canonical inputs, evidence, provenance, runtime hashes, manifest, and `SHA256SUMS`
+- independent `dtac bundle-verify` tamper detection and semantic-fingerprint verification
 - dependency-free JavaScript ESM generation with optional TypeScript declarations and Node parity tests
 - multi-table decision packages with explicit dependencies and output-to-input bindings
 - package validation, cycle detection, deterministic topological execution, terminal outputs, and type-safe bindings
@@ -46,7 +49,7 @@ See the [documentation home](docs/index.md), [architecture](docs/architecture.md
 - strict DMN 1.4 import/export subset for UNIQUE/FIRST tables with explicit unsupported-semantics failures
 - deterministic Markdown/standalone HTML business-review reports
 - SARIF 2.1.0 and GitHub Actions annotations
-- JSON Schemas for tables and package manifests
+- JSON Schemas for tables, package manifests, and release manifests
 - runnable SAP-oriented derivation, classification, replication-filter, and approval examples
 - documented SAP/BRFplus adapter boundary without pretending generic SAP deployment compatibility
 
@@ -99,6 +102,26 @@ dtac render examples/order-routing-v2.yaml \
   --format html \
   --output order-routing-change.html
 ```
+
+## Build an auditable release bundle
+
+Package the exact reviewed table, tests, change evidence, provenance, review artifact, and optional JavaScript runtime into one deterministic directory:
+
+```bash
+dtac bundle examples/order-routing.yaml \
+  --output /tmp/order-routing-release \
+  --scenarios examples/order-routing.scenarios.yaml \
+  --against examples/order-routing-v2.yaml \
+  --javascript
+```
+
+Verify it independently without access to the original workspace:
+
+```bash
+dtac bundle-verify /tmp/order-routing-release
+```
+
+The bundle includes `manifest.json` plus `SHA256SUMS`. Rebuilding with identical inputs is byte-for-byte reproducible; modifying the canonical table, generated runtime, scenario/diff/validation evidence, review artifact, or manifest makes verification fail. `SHA256SUMS` is designed as the stable subject for an optional external SSH/GPG/HSM signature. See [auditable decision release bundles](docs/release-bundles.md).
 
 ## Compile a table to JavaScript
 
@@ -218,7 +241,7 @@ The [SAP / BRFplus interoperability guide](docs/sap-brfplus.md) defines the conc
 DTAC governs the portable layer before runtime deployment:
 
 ```text
-source -> canonical decision tables -> validate/test/diff/package graph -> review -> generated runtime or target adapter
+source -> canonical decisions -> validate/test/diff/graph -> review -> verified release bundle -> runtime or target adapter
 ```
 
 The target runtime may be generated JavaScript, BRFplus, DMN, ABAP, workflow, middleware, or custom code. DTAC does not claim unrelated runtimes have identical semantics. A target adapter must explicitly prove that the table's types, operators, hit policy, provenance, effective-date behavior, and package dataflow are representable.
@@ -228,6 +251,7 @@ See [architecture](docs/architecture.md) and the [staged adoption guide](docs/ad
 ## Reference
 
 - [CLI reference](docs/cli-reference.md) — generated from the actual parser and checked in CI
+- [auditable decision release bundles](docs/release-bundles.md)
 - [dependency-free JavaScript runtime](docs/javascript-runtime.md)
 - [multi-table decision packages](docs/decision-packages.md)
 - [DMN 1.4 interoperability subset](docs/dmn.md)
@@ -252,6 +276,6 @@ See [architecture](docs/architecture.md) and the [staged adoption guide](docs/ad
 
 ## Roadmap and status
 
-Working MVP. The model and CLI are usable, but v1 is still pre-stable. Organization policy packs, signed decision release bundles, and stronger compatibility proofs remain roadmap work.
+Working MVP. The model and CLI are usable, but v1 is still pre-stable. Organization policy packs and stronger compatibility proofs remain roadmap work.
 
 See [ROADMAP.md](ROADMAP.md).
