@@ -46,7 +46,19 @@ def semantic_diff(before: DecisionTable, after: DecisionTable) -> TableDiff:
 
 def _rule_changes(before: Rule, after: Rule) -> dict[str, Any]:
     changes: dict[str, Any] = {}
-    for field_name in ("when", "then", "description", "priority"):
+    for field_name in (
+        "when",
+        "then",
+        "description",
+        "priority",
+        "owner",
+        "source",
+        "ticket",
+        "rationale",
+        "effective_from",
+        "effective_to",
+        "metadata",
+    ):
         old_value = getattr(before, field_name)
         new_value = getattr(after, field_name)
         if old_value != new_value:
