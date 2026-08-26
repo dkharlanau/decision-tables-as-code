@@ -25,6 +25,7 @@ from .package import (
     render_package_graph,
     validate_package,
 )
+from .policy import load_policy_pack, policy_report
 from .release import create_release_bundle, verify_release_bundle
 from .render import render_html, render_markdown
 from .reporting import diagnostics_to_github_annotations, sarif_json
@@ -112,6 +113,12 @@ def build_parser() -> argparse.ArgumentParser:
     bundle_verify_parser.add_argument("bundle")
     bundle_verify_parser.add_argument("--output", help="Write verification JSON to a file instead of stdout")
 
+    policy_parser = sub.add_parser("policy-check", help="Apply reusable organization governance policy packs")
+    policy_parser.add_argument("table")
+    policy_parser.add_argument("--policy", action="append", required=True, help="Policy-pack YAML/JSON path; repeat to compose packs")
+    policy_parser.add_argument("--format", choices=("text", "json"), default="text", dest="output_format")
+    policy_parser.add_argument("--output", help="Write policy report to a file instead of stdout")
+
     package_validate_parser = sub.add_parser("package-validate", help="Validate a multi-table decision package")
     package_validate_parser.add_argument("manifest")
     package_validate_parser.add_argument("--format", choices=("text", "json"), default="text", dest="output_format")
@@ -184,6 +191,8 @@ def main(argv: list[str] | None = None) -> int:
             return _bundle(args.table, args.output, args.scenarios, args.against, args.javascript)
         if args.command == "bundle-verify":
             return _bundle_verify(args.bundle, args.output)
+        if args.command == "policy-check":
+            return _policy_check(args.table, args.policy, args.output_format, args.output)
         if args.command == "package-validate":
             return _package_validate(args.manifest, args.output_format, args.output)
         if args.command == "package-eval":
@@ -368,6 +377,31 @@ def _bundle(
 def _bundle_verify(bundle_dir: str, output_path: str | None) -> int:
     payload = json.dumps(verify_release_bundle(bundle_dir), indent=2, sort_keys=True) + "\n"
     return _emit(payload, output_path)
+
+
+def _policy_check(
+    table_path: str,
+    policy_paths: list[str],
+    output_format: str,
+    output_path: str | None,
+) -> int:
+    table = load_table(table_path)
+    policies = [load_policy_pack(path) for path in policy_paths]
+    report = policy_report(table, policies, validate_table(table))
+    if output_format == "json":
+        rendered = json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False, default=str) + "\n"
+    elif report["ok"]:
+        rendered = f"OK {table.id}: policies {', '.join(report['policy_ids'])} passed\n"
+    else:
+        lines: list[str] = []
+        for item in report["base_validation"]:
+            lines.append(f"{item['severity'].upper():7} {item['code']} {item['path']}: {item['message']}\n")
+        for item in report["policy_diagnostics"]:
+            lines.append(
+                f"{item['severity'].upper():7} {item['code']} [{item['policy_id']}] {item['path']}: {item['message']}\n"
+            )
+        rendered = "".join(lines)
+    return _emit(rendered, output_path, error_status=0 if report["ok"] else 1)
 
 
 def _package_validate(manifest_path: str, output_format: str, output_path: str | None) -> int:
