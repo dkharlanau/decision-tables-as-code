@@ -1,0 +1,41 @@
+version: 1
+id: approval-decision
+name: Approval decision
+hit_policy: first
+description: Select an approval strategy using risk derived by an upstream decision plus the external amount fact.
+inputs:
+  - name: amount
+    type: number
+  - name: risk_level
+    type: string
+outputs:
+  - name: strategy
+    type: string
+rules:
+  - id: high-risk
+    when:
+      risk_level: HIGH
+    then:
+      strategy: L4
+  - id: medium-large
+    when:
+      risk_level: MEDIUM
+      amount: {gte: 10000}
+    then:
+      strategy: L3
+  - id: medium-default
+    when:
+      risk_level: MEDIUM
+    then:
+      strategy: L2
+  - id: low-large
+    when:
+      risk_level: LOW
+      amount: {gte: 10000}
+    then:
+      strategy: L2
+  - id: low-default
+    when:
+      risk_level: LOW
+    then:
+      strategy: L1
