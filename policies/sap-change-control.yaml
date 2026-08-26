@@ -1,0 +1,11 @@
+version: 1
+id: sap-change-control
+description: Change-control defaults for SAP, BRFplus, master-data, migration, and interface decision logic.
+severity: error
+rules:
+  required_rule_fields: [owner, source, ticket, rationale]
+  allowed_hit_policies: [unique, first]
+  forbidden_operators: [regex]
+  require_input_domains: true
+  require_complete_effective_window: true
+  max_rules: 500
