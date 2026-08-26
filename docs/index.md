@@ -2,13 +2,14 @@
 
 Decision Tables as Code is a Git-native workflow for enterprise business rules that are currently difficult to review because they live in Excel workbooks, migration files, configuration tables, or runtime-specific rule systems.
 
-The core idea is simple: keep a small canonical decision-table model in Git, then make validation, business scenarios, coverage, semantic change review, provenance, interoperability, multi-decision dataflow, and target-system adaptation reproducible around it.
+The core idea is simple: keep a small canonical decision-table model in Git, then make validation, business scenarios, coverage, semantic change review, provenance, interoperability, multi-decision dataflow, portable runtimes, and target-system adaptation reproducible around it.
 
 ## Start from the problem you have
 
 | Problem | Start here | Runnable example |
 | --- | --- | --- |
 | Validate an Excel decision table before deployment | [Excel decision table validation](use-cases/excel-decision-table-validation.md) | `examples/order-routing.csv` |
+| Run reviewed decision logic in Node.js/browser code | [Dependency-free JavaScript runtime](javascript-runtime.md) | `dtac js-export examples/order-routing.yaml` |
 | Connect several decisions and trace downstream impact | [Multi-table decision packages](decision-packages.md) | `examples/package/order-approval/package.yaml` |
 | Govern an approval or release matrix | [Approval matrices](use-cases/approval-matrix.md) | `examples/sap/approval-matrix.yaml` |
 | Derive target master-data values during migration | [Master-data derivation](use-cases/master-data-derivation.md) | `examples/sap/customer-account-group-derivation.yaml` |
@@ -39,15 +40,18 @@ Excel / DMN / YAML / JSON / exported configuration
                       v
                 business review
                       |
-                      v
-            target-specific adapter
+          +-----------+------------+
+          |                        |
+          v                        v
+ generated JS runtime      target-specific adapter
 ```
 
-The repository does not require a hosted service. The CLI, scenarios, reports, package graphs, DMN fixtures, and enterprise examples run locally and in ordinary GitHub Actions.
+The repository does not require a hosted service. The CLI, scenarios, reports, generated JavaScript, package graphs, DMN fixtures, and enterprise examples run locally and in ordinary GitHub Actions.
 
 ## Adoption paths
 
 - Existing workbook: [import spreadsheets](importing-spreadsheets.md) → validate → scenarios → semantic diff → review report.
+- JavaScript deployment: validate/test the canonical table → [generate dependency-free ESM](javascript-runtime.md) → Node parity test → deploy the generated artifact.
 - Several related decisions: [decision packages](decision-packages.md) → validate dependencies → execute topologically → graph/impact/package diff.
 - Existing DMN 1.4 decision table: [DMN interoperability subset](dmn.md) → import → validate/test/diff → optional strict export.
 - New rule set: [v1 specification](specification.md) → [scenario testing](scenario-testing.md) → CI.
@@ -59,6 +63,7 @@ See [architecture](architecture.md) for the product boundary and [adoption guide
 ## Reference
 
 - [CLI reference](cli-reference.md)
+- [Dependency-free JavaScript runtime](javascript-runtime.md)
 - [Multi-table decision packages](decision-packages.md)
 - [DMN 1.4 interoperability subset](dmn.md)
 - [Decision-table v1 specification](specification.md)
@@ -72,4 +77,4 @@ See [architecture](architecture.md) for the product boundary and [adoption guide
 
 ## Search vocabulary
 
-This project intentionally documents the concrete terms teams use when they look for this problem: **decision tables as code**, **business rules in Git**, **decision dependency graph**, **multi-table decision engine**, **decision impact analysis**, **Excel decision table validation**, **decision table testing**, **DMN Git workflow**, **DMN 1.4 decision table import export**, **SAP BRFplus testing**, **approval matrix testing**, **master-data derivation rules**, **interface filtering rules**, and **semantic diff for business rules**.
+This project intentionally documents the concrete terms teams use when they look for this problem: **decision tables as code**, **business rules in Git**, **JavaScript decision table runtime**, **dependency-free rule engine**, **decision dependency graph**, **multi-table decision engine**, **decision impact analysis**, **Excel decision table validation**, **decision table testing**, **DMN Git workflow**, **DMN 1.4 decision table import export**, **SAP BRFplus testing**, **approval matrix testing**, **master-data derivation rules**, **interface filtering rules**, and **semantic diff for business rules**.
