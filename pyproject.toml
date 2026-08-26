@@ -23,6 +23,7 @@ excel = ["openpyxl>=3.1"]
 
 [project.scripts]
 dtac = "decision_tables_as_code.cli:main"
+dtac-python-export = "decision_tables_as_code.runtime_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["decision_tables_as_code*"]

@@ -34,7 +34,8 @@ The product goal is a practical Git-native layer for enterprise decision logic: 
 
 - [x] strict DMN 1.4 import/export subset with round-trip fixtures
 - [x] BRFplus-oriented adapter boundary and runnable SAP examples
-- [ ] generated runtime adapters for Python/JavaScript
+- [x] generated dependency-free Python runtime adapter
+- [ ] generated JavaScript/TypeScript runtime adapter
 - [x] machine-readable semantic change report
 
 ## Scale and governance
