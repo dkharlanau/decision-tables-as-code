@@ -32,11 +32,13 @@ def test_local_markdown_links_resolve():
 def test_use_case_gallery_points_to_runnable_examples():
     required = [
         "examples/order-routing.yaml",
+        "examples/order-routing-v2.yaml",
         "examples/order-routing.scenarios.yaml",
         "examples/order-routing.csv",
         "examples/order-routing.import.yaml",
         "examples/effective-routing.yaml",
         "examples/effective-routing.scenarios.yaml",
+        "docs/behavioral-compatibility.md",
         "examples/dmn/routing-unique.dmn",
         "examples/dmn/approval-first.dmn",
         "examples/package/order-approval/package.yaml",
