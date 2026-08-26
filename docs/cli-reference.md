@@ -35,6 +35,22 @@ dtac bundle-verify <bundle> [--output <output>]
 | `bundle` | yes | — | — | — |
 | `--output` `<output>` | no | — | — | Write verification JSON to a file instead of stdout |
 
+## `dtac compatibility`
+
+```text
+dtac compatibility <before> <after> [--as-of <as-of>] [--max-combinations <max-combinations>] [--max-witnesses <max-witnesses>] [--fail-on-change] [--output <output>]
+```
+
+| Argument | Required | Default | Choices | Help |
+| --- | --- | --- | --- | --- |
+| `before` | yes | — | — | — |
+| `after` | yes | — | — | — |
+| `--as-of` `<as-of>` | no | — | — | Explicit YYYY-MM-DD date for effective-dated rules |
+| `--max-combinations` `<max-combinations>` | no | `10000` | — | — |
+| `--max-witnesses` `<max-witnesses>` | no | `100` | — | — |
+| `--fail-on-change` | no | false | — | Exit 1 when a proven behavior change exists; exit 2 when proof is impossible |
+| `--output` `<output>` | no | — | — | Write versioned compatibility JSON to a file instead of stdout |
+
 ## `dtac coverage`
 
 ```text
