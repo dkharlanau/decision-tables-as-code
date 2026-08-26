@@ -10,6 +10,7 @@ from .coverage import analyze_coverage
 from .diff import semantic_diff
 from .engine import evaluate
 from .importer import dump_yaml, import_spreadsheet, load_import_config
+from .inspect import inspect_table
 from .io import load_table
 from .model import table_from_mapping
 from .render import render_html, render_markdown
@@ -32,6 +33,10 @@ def build_parser() -> argparse.ArgumentParser:
     eval_parser.add_argument("table")
     eval_parser.add_argument("--facts", required=True, help="JSON object or @path/to/facts.json")
     eval_parser.add_argument("--as-of", help="Explicit YYYY-MM-DD date used for effective-dated rules")
+
+    inspect_parser = sub.add_parser("inspect", help="Inspect a decision table as stable machine-readable JSON")
+    inspect_parser.add_argument("table")
+    inspect_parser.add_argument("--output", help="Write JSON inspection output to a file instead of stdout")
 
     diff_parser = sub.add_parser("diff", help="Create a semantic diff between two tables")
     diff_parser.add_argument("before")
@@ -69,6 +74,8 @@ def main(argv: list[str] | None = None) -> int:
             return _validate(args.table, args.output_format, args.output, args.legacy_json)
         if args.command == "eval":
             return _eval(args.table, args.facts, args.as_of)
+        if args.command == "inspect":
+            return _inspect(args.table, args.output)
         if args.command == "diff":
             return _diff(args.before, args.after)
         if args.command == "coverage":
@@ -123,6 +130,16 @@ def _eval(path: str, raw_facts: str, as_of: str | None = None) -> int:
         raise ValueError("--facts must resolve to a JSON object")
     result = evaluate(table, facts, as_of=as_of)
     print(json.dumps(asdict(result), indent=2, default=str))
+    return 0
+
+
+def _inspect(path: str, output_path: str | None = None) -> int:
+    payload = json.dumps(inspect_table(load_table(path)), indent=2, default=str) + "\n"
+    if output_path:
+        Path(output_path).write_text(payload, encoding="utf-8")
+        print(f"Wrote {output_path}")
+    else:
+        print(payload, end="")
     return 0
 
 
