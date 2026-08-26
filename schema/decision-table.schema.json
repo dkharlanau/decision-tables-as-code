@@ -54,6 +54,13 @@
         "id": {"type": "string", "minLength": 1},
         "description": {"type": "string"},
         "priority": {"type": "integer"},
+        "owner": {"type": "string"},
+        "source": {"type": "string"},
+        "ticket": {"type": "string"},
+        "rationale": {"type": "string"},
+        "effective_from": {"type": "string", "format": "date"},
+        "effective_to": {"type": "string", "format": "date"},
+        "metadata": {"type": "object"},
         "when": {"type": "object"},
         "then": {"type": "object"}
       },
