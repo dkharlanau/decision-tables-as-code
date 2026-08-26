@@ -47,7 +47,7 @@ The product goal is a practical Git-native layer for enterprise decision logic: 
 - [x] deterministic decision release bundles with manifests, evidence, runtime hashes, checksums, and independent verification
 - [x] detached-signature workflow based on stable `SHA256SUMS` subject and external enterprise signing keys
 - [x] exhaustive finite-domain behavioral compatibility proofs with concrete witness cases
-- [ ] policy packs for organization-specific checks
+- [x] reusable organization policy packs for provenance, hit-policy, operator, domain, size, and effective-window checks
 - [ ] explicit approval-policy/approver metadata
 - [x] agent-facing inspect/explain interface
 - [x] classified semantic-diff gates for CI

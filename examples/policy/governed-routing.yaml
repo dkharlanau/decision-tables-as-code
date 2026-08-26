@@ -1,0 +1,36 @@
+version: 1
+id: governed-routing
+name: Governed enterprise routing
+hit_policy: unique
+inputs:
+  - name: country
+    type: string
+    domain: [DE, PL]
+  - name: order_value
+    type: integer
+    domain: [500, 5000]
+outputs:
+  - name: route
+    type: string
+rules:
+  - id: de-standard
+    owner: Order Management
+    source: EU routing workbook
+    ticket: CHG-2101
+    rationale: Route German orders through the DE desk.
+    when:
+      country: DE
+      order_value: "*"
+    then:
+      route: DE_DESK
+
+  - id: pl-standard
+    owner: Order Management
+    source: EU routing workbook
+    ticket: CHG-2101
+    rationale: Route Polish orders through the shared service desk.
+    when:
+      country: PL
+      order_value: "*"
+    then:
+      route: PL_SHARED

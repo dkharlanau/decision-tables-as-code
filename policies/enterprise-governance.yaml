@@ -1,0 +1,9 @@
+version: 1
+id: enterprise-governance
+description: Baseline governance for business-critical enterprise decision tables.
+severity: error
+rules:
+  required_rule_fields: [owner, ticket, rationale]
+  allowed_hit_policies: [unique, first]
+  require_input_domains: true
+  max_rules: 200
