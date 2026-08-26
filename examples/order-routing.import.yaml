@@ -1,0 +1,30 @@
+table:
+  id: order-routing-imported
+  name: Order routing imported from spreadsheet
+  hit_policy: unique
+  metadata:
+    source: examples/order-routing.csv
+blank_condition: wildcard
+columns:
+  rule_id: Rule ID
+  priority: Priority
+  inputs:
+    country:
+      column: Country
+      type: string
+      domain: [DE, PL]
+    customer_type:
+      column: Customer Type
+      type: string
+      domain: [B2B, B2C]
+    order_value:
+      column: Order Value
+      type: integer
+      domain: [500, 5000]
+  outputs:
+    route:
+      column: Route
+      type: string
+    approval:
+      column: Approval
+      type: string
