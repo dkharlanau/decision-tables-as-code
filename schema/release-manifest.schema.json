@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dkharlanau.github.io/decision-tables-as-code/schema/release-manifest.schema.json",
+  "title": "Decision Tables as Code release manifest v1",
+  "type": "object",
+  "required": [
+    "format_version",
+    "bundle_type",
+    "table",
+    "validation",
+    "scenarios",
+    "semantic_diff",
+    "review",
+    "provenance",
+    "runtimes",
+    "files"
+  ],
+  "properties": {
+    "format_version": {"const": 1},
+    "bundle_type": {"const": "decision-table-release"},
+    "table": {
+      "type": "object",
+      "required": ["id", "name", "format_version", "hit_policy", "semantic_fingerprint"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "format_version": {"type": "integer", "minimum": 1},
+        "hit_policy": {"enum": ["unique", "first", "collect"]},
+        "semantic_fingerprint": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "validation": {
+      "type": "object",
+      "required": ["ok", "finding_count", "severity_counts", "path"],
+      "properties": {
+        "ok": {"type": "boolean"},
+        "finding_count": {"type": "integer", "minimum": 0},
+        "severity_counts": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "path": {"type": "string", "const": "evidence/validation.json"}
+      },
+      "additionalProperties": false
+    },
+    "scenarios": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["ok", "total", "passed", "failed", "definition_path", "report_path"],
+          "properties": {
+            "ok": {"type": "boolean"},
+            "total": {"type": "integer", "minimum": 0},
+            "passed": {"type": "integer", "minimum": 0},
+            "failed": {"type": "integer", "minimum": 0},
+            "definition_path": {"type": "string"},
+            "report_path": {"type": "string"}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "semantic_diff": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["changed", "classification", "baseline_fingerprint", "baseline_path", "report_path"],
+          "properties": {
+            "changed": {"type": "boolean"},
+            "classification": {
+              "enum": ["none", "governance_only", "non_breaking", "potentially_breaking", "breaking"]
+            },
+            "baseline_fingerprint": {"$ref": "#/$defs/sha256"},
+            "baseline_path": {"type": "string"},
+            "report_path": {"type": "string"}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "review": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {"path": {"type": "string", "const": "review.md"}},
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "rule_id",
+          "owner",
+          "source",
+          "ticket",
+          "rationale",
+          "effective_from",
+          "effective_to",
+          "metadata"
+        ],
+        "properties": {
+          "rule_id": {"type": "string", "minLength": 1},
+          "owner": {"type": ["string", "null"]},
+          "source": {"type": ["string", "null"]},
+          "ticket": {"type": ["string", "null"]},
+          "rationale": {"type": ["string", "null"]},
+          "effective_from": {"type": ["string", "null"], "format": "date"},
+          "effective_to": {"type": ["string", "null"], "format": "date"},
+          "metadata": {"type": "object"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "runtimes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "path", "sha256", "bytes"],
+        "properties": {
+          "kind": {"type": "string", "minLength": 1},
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {"$ref": "#/$defs/sha256"},
+          "bytes": {"type": "integer", "minimum": 0}
+        },
+        "additionalProperties": false
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 4,
+      "items": {"$ref": "#/$defs/file"}
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "file": {
+      "type": "object",
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    }
+  }
+}

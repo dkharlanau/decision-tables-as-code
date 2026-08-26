@@ -29,8 +29,9 @@ def test_generated_module_is_dependency_free_esm_and_types_are_stable():
 
     assert "export function evaluate" in source
     assert "export function matchingRules" in source
-    assert "from " not in source
+    assert not any(line.lstrip().startswith("import ") for line in source.splitlines())
     assert "require(" not in source
+    assert "import(" not in source
     assert 'export const tableId = TABLE.id' in source
     assert 'table_id: "order-routing"' in declaration
     assert "asOf?: string | Date" in declaration

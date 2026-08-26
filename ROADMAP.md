@@ -44,8 +44,10 @@ The product goal is a practical Git-native layer for enterprise decision logic: 
 - [x] decision dependency graph with JSON/DOT/Mermaid output
 - [x] deterministic topological package execution
 - [x] transitive impact analysis and package semantic/dependency diff
+- [x] deterministic decision release bundles with manifests, evidence, runtime hashes, checksums, and independent verification
+- [x] detached-signature workflow based on stable `SHA256SUMS` subject and external enterprise signing keys
 - [ ] policy packs for organization-specific checks
-- [ ] approval metadata and signed release bundles
+- [ ] explicit approval-policy/approver metadata
 - [ ] deeper backward-compatibility proofs between table versions
 - [x] agent-facing inspect/explain interface
 - [x] classified semantic-diff gates for CI
