@@ -221,6 +221,19 @@ dtac package-validate <manifest> [--format <output-format>] [--output <output>]
 | `--format` `<output-format>` | no | `text` | `text`, `json` | — |
 | `--output` `<output>` | no | — | — | Write validation output to a file instead of stdout |
 
+## `dtac policy-check`
+
+```text
+dtac policy-check <table> --policy <policy> [--format <output-format>] [--output <output>]
+```
+
+| Argument | Required | Default | Choices | Help |
+| --- | --- | --- | --- | --- |
+| `table` | yes | — | — | — |
+| `--policy` `<policy>` | yes | — | — | Policy-pack YAML/JSON path; repeat to compose packs |
+| `--format` `<output-format>` | no | `text` | `text`, `json` | — |
+| `--output` `<output>` | no | — | — | Write policy report to a file instead of stdout |
+
 ## `dtac render`
 
 ```text
