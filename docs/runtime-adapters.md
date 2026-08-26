@@ -4,13 +4,13 @@ Decision Tables as Code can turn a reviewed canonical table into an autonomous r
 
 ## Python runtime export
 
-Install DTAC, then generate a standalone Python module:
+Generate a standalone Python module:
 
 ```bash
 dtac-python-export examples/order-routing.yaml --output build/order_routing.py
 ```
 
-The generated module has no DTAC or PyYAML runtime dependency. It embeds the normalized decision table and exposes:
+The generated module has no DTAC or PyYAML runtime dependency and exposes `evaluate(facts, as_of=None)`.
 
 ```python
 from build.order_routing import evaluate
@@ -22,11 +22,37 @@ result = evaluate({
 })
 ```
 
-The result contains `table_id`, `matched_rule_ids`, and `outputs`.
+## JavaScript runtime export
+
+Generate a dependency-free ES module:
+
+```bash
+dtac-js-export examples/order-routing.yaml --output build/order-routing.mjs
+```
+
+Use it directly from Node.js or another ES-module runtime:
+
+```javascript
+import { evaluate } from "./build/order-routing.mjs";
+
+const result = evaluate({
+  country: "DE",
+  customer_type: "B2B",
+  order_value: 6000,
+});
+```
+
+For effective-dated tables, pass an explicit date:
+
+```javascript
+const result = evaluate({ country: "DE" }, { as_of: "2027-01-01" });
+```
+
+Both generated runtimes return `table_id`, `matched_rule_ids`, and `outputs`.
 
 ## Semantic contract
 
-The generated Python runtime preserves the native DTAC execution semantics for:
+Generated runtimes preserve the native DTAC execution semantics for:
 
 - `unique`, `first`, and `collect` hit policies
 - scalar equality and list membership
@@ -53,14 +79,17 @@ canonical decision table
       v
 runtime export
       |
+      +--> Python module
+      +--> JavaScript ES module
+      |
       v
 application artifact
 ```
 
-A useful CI pattern is to generate the runtime artifact from the exact reviewed commit or release tag and package it together with the semantic-diff report and scenario results.
+A useful CI pattern is to generate runtime artifacts from the exact reviewed commit or release tag and package them together with the semantic-diff report and scenario results.
 
 ## Boundary
 
-Runtime export is code generation, not generic deployment. DTAC does not install the generated module into an application, configure application-specific integration, or claim semantic equivalence with proprietary rule platforms. Each adapter must have explicit parity tests against the native DTAC evaluator.
+Runtime export is code generation, not generic deployment. DTAC does not install generated modules into applications, configure application-specific integration, or claim semantic equivalence with proprietary rule platforms. Each adapter must have explicit parity tests against the native DTAC evaluator.
 
-Python is the first generated runtime target. JavaScript/TypeScript and stronger release-bundle provenance remain roadmap items.
+Stronger release-bundle provenance, multi-table compilation, and target-specific compatibility proofs remain roadmap work.
