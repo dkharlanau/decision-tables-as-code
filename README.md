@@ -1,6 +1,6 @@
 # Decision Tables as Code
 
-Git-native validation, evaluation, coverage analysis, semantic diff, spreadsheet import, executable scenarios, and business-review reports for enterprise decision tables.
+Git-native validation, evaluation, coverage analysis, semantic diff, spreadsheet import, executable scenarios, business-review reports, and GitHub-native diagnostics for enterprise decision tables.
 
 Business rules often live in Excel, configuration workbooks, migration templates, or application-specific rule editors. They are easy to change and difficult to review: duplicates are hidden, conflicting rules survive for months, coverage gaps appear only in production, and a pull request cannot explain what business logic actually changed.
 
@@ -11,7 +11,7 @@ Decision Tables as Code provides a small vendor-neutral format and deterministic
 - canonical YAML/JSON decision-table model
 - `unique`, `first`, and `collect` hit policies
 - equality, membership, ranges, wildcard, existence, and regex conditions
-- structural and semantic validation
+- structural and semantic validation with stable `DTxxx` diagnostic codes
 - duplicate and exact-conflict detection
 - proven overlap detection for UNIQUE tables
 - FIRST-policy shadowed-rule detection
@@ -23,6 +23,8 @@ Decision Tables as Code provides a small vendor-neutral format and deterministic
 - deterministic Markdown and standalone HTML review reports
 - optional coverage and semantic-change summaries in reports
 - stable rule anchors and semantic fingerprints
+- SARIF 2.1.0 output for code-scanning systems
+- native GitHub Actions `::error` / `::warning` annotations
 - JSON Schema
 - CLI suitable for CI
 - runnable tests and GitHub Actions
@@ -64,7 +66,23 @@ Validate:
 dtac validate examples/order-routing.yaml
 ```
 
-Validation includes exact conflicts plus conservative rule-relationship analysis: `DT032` reports proven UNIQUE overlaps and `DT033` reports FIRST rules that are provably unreachable because an earlier rule fully shadows them. See [rule analysis](docs/rule-analysis.md).
+Validation includes exact conflicts plus conservative rule-relationship analysis: `DT032` reports proven UNIQUE overlaps and `DT033` reports FIRST rules that are provably unreachable because an earlier rule fully shadows them. See [rule analysis](docs/rule-analysis.md) and the [diagnostic reference](docs/diagnostics.md).
+
+Use GitHub-native workflow annotations:
+
+```bash
+dtac validate examples/order-routing.yaml --format github
+```
+
+Generate SARIF 2.1.0 for GitHub Code Scanning or another SARIF consumer:
+
+```bash
+dtac validate examples/order-routing.yaml \
+  --format sarif \
+  --output dtac.sarif
+```
+
+The validator's exit code is independent of the report format: error findings still return `1`. See [GitHub Actions and Code Scanning](docs/github-integration.md).
 
 Evaluate a decision:
 
@@ -127,17 +145,17 @@ Reports include the rule matrix, diagnostics, stable rule anchors, and a semanti
 
 The same pattern appears in SAP and non-SAP work: pricing matrices, partner determination, routing rules, master-data derivations, tax classifications, interface filters, migration mappings, approval matrices, cutover rules, and exception handling. The runtime may be ABAP, BRFplus, DMN, a workflow engine, middleware, or custom code, but the review problem is the same.
 
-This repository focuses on the portable layer before runtime deployment: import or define the logic, validate it, prove coverage where possible, execute business regressions, render it for review, compare changes, and then export or adapt it to the target platform.
+This repository focuses on the portable layer before runtime deployment: import or define the logic, validate it, surface findings directly in CI, prove coverage where possible, execute business regressions, render it for review, compare changes, and then export or adapt it to the target platform.
 
 ## Format design
 
 The v1 format is intentionally small. Scalars mean equality, lists mean membership, `"*"` means any present value, and operator objects support `eq`, `ne`, `in`, `not_in`, `gt`, `gte`, `lt`, `lte`, `between`, `exists`, and `regex`.
 
-See [the v1 specification](docs/specification.md), [rule analysis](docs/rule-analysis.md), [spreadsheet importing](docs/importing-spreadsheets.md), [scenario testing](docs/scenario-testing.md), [business review reports](docs/review-reports.md), and [CI integration](docs/ci.md).
+See [the v1 specification](docs/specification.md), [diagnostic reference](docs/diagnostics.md), [rule analysis](docs/rule-analysis.md), [spreadsheet importing](docs/importing-spreadsheets.md), [scenario testing](docs/scenario-testing.md), [business review reports](docs/review-reports.md), [GitHub integration](docs/github-integration.md), and [CI integration](docs/ci.md).
 
 ## Near-term roadmap
 
-The next high-value layers are SARIF/GitHub annotations, provenance and effective dates, DMN interoperability, machine-readable inspect/explain reports, and SAP/BRFplus-oriented examples.
+The next high-value layers are provenance and effective dates, DMN interoperability, machine-readable inspect/explain reports, and SAP/BRFplus-oriented examples.
 
 See [ROADMAP.md](ROADMAP.md) for the working roadmap.
 

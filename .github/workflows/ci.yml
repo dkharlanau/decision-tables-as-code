@@ -19,6 +19,9 @@ jobs:
       - run: python -m pip install -e '.[dev]'
       - run: pytest
       - run: dtac validate examples/order-routing.yaml
+      - run: dtac validate examples/order-routing.yaml --format github
+      - run: dtac validate examples/order-routing.yaml --format sarif --output /tmp/dtac.sarif
+      - run: python -c 'import json; d=json.load(open("/tmp/dtac.sarif")); assert d["version"] == "2.1.0"'
       - run: dtac coverage examples/order-routing.yaml
       - run: dtac import examples/order-routing.csv --config examples/order-routing.import.yaml --output /tmp/imported.yaml
       - run: dtac validate /tmp/imported.yaml

@@ -33,6 +33,9 @@ capabilities:
   - business-review-rendering
   - markdown-html-reports
   - semantic-fingerprints
+  - sarif-reporting
+  - github-action-annotations
+  - stable-diagnostic-codes
   - cli
   - json-schema
   - ci
