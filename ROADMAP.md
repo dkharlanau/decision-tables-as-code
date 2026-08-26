@@ -16,23 +16,23 @@ The product goal is a practical Git-native layer for enterprise decision logic: 
 - [x] CLI and GitHub Actions
 - [x] examples and automated tests
 
-## Next — adoption layer
+## Adoption layer
 
-- [ ] Excel/CSV importer with explicit column mapping
+- [x] Excel/CSV importer with explicit column mapping
 - [ ] scenario file format and `dtac test`
 - [ ] Markdown/HTML rendering for business review
 - [ ] SARIF or GitHub annotations for validator findings
 - [ ] richer overlap/shadow analysis for numeric and enum conditions
 - [ ] rule provenance (`source`, ticket, owner, effective dates)
 
-## Next — interoperability
+## Interoperability
 
 - [ ] DMN 1.4 import/export subset
 - [ ] BRFplus-oriented adapter examples
 - [ ] generated runtime adapters for Python/JavaScript
 - [ ] machine-readable semantic change report
 
-## Next — scale and governance
+## Scale and governance
 
 - [ ] multi-table packages and dependencies
 - [ ] decision dependency graph
