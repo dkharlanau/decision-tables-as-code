@@ -25,6 +25,8 @@ capabilities:
   - evaluation
   - finite-domain-coverage
   - semantic-diff
+  - spreadsheet-import
+  - csv-xlsx-import
   - cli
   - json-schema
   - ci

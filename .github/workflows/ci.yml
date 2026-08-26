@@ -20,3 +20,6 @@ jobs:
       - run: pytest
       - run: dtac validate examples/order-routing.yaml
       - run: dtac coverage examples/order-routing.yaml
+      - run: dtac import examples/order-routing.csv --config examples/order-routing.import.yaml --output /tmp/imported.yaml
+      - run: dtac validate /tmp/imported.yaml
+      - run: dtac coverage /tmp/imported.yaml
