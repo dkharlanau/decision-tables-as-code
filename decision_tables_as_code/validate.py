@@ -103,10 +103,12 @@ def _duplicate_and_conflict_diagnostics(table: DecisionTable) -> list[Diagnostic
             other_index, other_output = by_condition[condition_key]
             other_rule = table.rules[other_index]
             if other_output == output_key:
+                severity = "error" if table.hit_policy == "unique" else "warning"
+                suffix = "; duplicate matches violate UNIQUE hit policy" if table.hit_policy == "unique" else ""
                 diagnostics.append(Diagnostic(
                     "DT030",
-                    "warning",
-                    f"Rule {rule.id!r} duplicates conditions and outputs of {other_rule.id!r}",
+                    severity,
+                    f"Rule {rule.id!r} duplicates conditions and outputs of {other_rule.id!r}{suffix}",
                     f"rules[{index}]",
                 ))
             else:

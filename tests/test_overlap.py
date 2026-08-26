@@ -70,3 +70,14 @@ def test_first_policy_specific_before_fallback_is_not_full_shadow():
     ])
     assert find_shadowed_rules(table) == ()
     assert "DT033" not in _codes(table)
+
+
+def test_unique_exact_duplicate_is_an_error_even_with_same_output():
+    table = _table("unique", [
+        {"id": "a", "when": {"value": "DE"}, "then": {"result": "A"}},
+        {"id": "b", "when": {"value": "DE"}, "then": {"result": "A"}},
+    ])
+    diagnostics = validate_table(table)
+    duplicate = next(item for item in diagnostics if item.code == "DT030")
+    assert duplicate.severity == "error"
+    assert "UNIQUE" in duplicate.message
