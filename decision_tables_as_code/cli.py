@@ -13,6 +13,7 @@ from .importer import dump_yaml, import_spreadsheet, load_import_config
 from .io import load_table
 from .model import table_from_mapping
 from .render import render_html, render_markdown
+from .reporting import diagnostics_to_github_annotations, sarif_json
 from .scenarios import load_scenarios, run_scenarios
 from .validate import has_errors, validate_table
 
@@ -23,7 +24,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate_parser = sub.add_parser("validate", help="Validate a decision table")
     validate_parser.add_argument("table")
-    validate_parser.add_argument("--json", action="store_true", dest="json_output")
+    validate_parser.add_argument("--format", choices=("text", "json", "sarif", "github"), default="text", dest="output_format")
+    validate_parser.add_argument("--output", help="Write validation output to a file instead of stdout")
+    validate_parser.add_argument("--json", action="store_true", dest="legacy_json", help=argparse.SUPPRESS)
 
     eval_parser = sub.add_parser("eval", help="Evaluate facts against a decision table")
     eval_parser.add_argument("table")
@@ -62,7 +65,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == "validate":
-            return _validate(args.table, args.json_output)
+            return _validate(args.table, args.output_format, args.output, args.legacy_json)
         if args.command == "eval":
             return _eval(args.table, args.facts)
         if args.command == "diff":
@@ -81,16 +84,34 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def _validate(path: str, json_output: bool) -> int:
+def _validate(path: str, output_format: str, output_path: str | None, legacy_json: bool = False) -> int:
+    if legacy_json:
+        if output_format != "text":
+            raise ValueError("Use either --json or --format, not both")
+        output_format = "json"
+
     table = load_table(path)
     diagnostics = validate_table(table)
-    if json_output:
-        print(json.dumps([item.to_dict() for item in diagnostics], indent=2))
+
+    if output_format == "json":
+        rendered = json.dumps([item.to_dict() for item in diagnostics], indent=2) + "\n"
+    elif output_format == "sarif":
+        rendered = sarif_json(diagnostics, path)
+    elif output_format == "github":
+        rendered = diagnostics_to_github_annotations(diagnostics, path)
     elif not diagnostics:
-        print(f"OK {table.id}: no validation findings")
+        rendered = f"OK {table.id}: no validation findings\n"
     else:
-        for item in diagnostics:
-            print(f"{item.severity.upper():7} {item.code} {item.path}: {item.message}")
+        rendered = "".join(
+            f"{item.severity.upper():7} {item.code} {item.path}: {item.message}\n"
+            for item in diagnostics
+        )
+
+    if output_path:
+        Path(output_path).write_text(rendered, encoding="utf-8")
+        print(f"Wrote {output_path}")
+    else:
+        print(rendered, end="")
     return 1 if has_errors(diagnostics) else 0
 
 
