@@ -7,8 +7,8 @@ The bundle is deterministic. It contains no generation timestamp, temporary path
 ## Build a release
 
 ```bash
-dtac release-build examples/order-routing.yaml \
-  --bundle /tmp/order-routing-release \
+dtac bundle examples/order-routing.yaml \
+  --output /tmp/order-routing-release \
   --scenarios examples/order-routing.scenarios.yaml \
   --against examples/order-routing-v2.yaml \
   --javascript
@@ -40,7 +40,7 @@ order-routing-release/
 
 ## Manifest contract
 
-`manifest.json` is the audit index. It includes:
+`manifest.json` is the audit index. Its machine-readable contract is defined by [`schema/release-manifest.schema.json`](../schema/release-manifest.schema.json). It includes:
 
 - bundle format/version;
 - canonical table ID, name, hit policy, format version, and semantic fingerprint;
@@ -58,7 +58,7 @@ The manifest intentionally has no current timestamp. A Git commit, Git tag, GitH
 A consumer does not need the original Git repository:
 
 ```bash
-dtac release-verify /tmp/order-routing-release
+dtac bundle-verify /tmp/order-routing-release
 ```
 
 Verification checks:
@@ -78,7 +78,7 @@ If `table.yaml`, a runtime, evidence report, review file, baseline, scenarios, o
 
 An organization can sign that file with its established mechanism, for example SSH signing, GPG, an HSM-backed signing service, or an enterprise artifact-signing platform. The recommended order is:
 
-1. run `dtac release-verify`;
+1. run `dtac bundle-verify`;
 2. cryptographically verify the detached signature over the exact `SHA256SUMS` bytes;
 3. check the signer/identity against the organization's approval policy.
 
@@ -124,7 +124,7 @@ A controlled promotion flow can use the same verified bundle across environments
 
 ## Why the bundle is a directory
 
-The canonical unit is a directory because archive formats can introduce timestamps, ownership metadata, and platform differences. The DTAC directory content is byte-deterministic. An organization may wrap it in ZIP/TAR/container/artifact-store packaging appropriate to its release platform, while `SHA256SUMS` and `release-verify` continue to define and verify the logical release content after extraction.
+The canonical unit is a directory because archive formats can introduce timestamps, ownership metadata, and platform differences. The DTAC directory content is byte-deterministic. An organization may wrap it in ZIP/TAR/container/artifact-store packaging appropriate to its release platform, while `SHA256SUMS` and `bundle-verify` continue to define and verify the logical release content after extraction.
 
 ## Reproducibility
 
