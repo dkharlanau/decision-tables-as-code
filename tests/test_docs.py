@@ -45,6 +45,8 @@ def test_use_case_gallery_points_to_runnable_examples():
         "examples/package/order-approval/fulfillment-route.yaml",
         "examples/package/order-approval/README.md",
         "schema/decision-package.schema.json",
+        "schema/release-manifest.schema.json",
+        "docs/release-bundles.md",
         "examples/sap/approval-matrix.yaml",
         "examples/sap/approval-matrix.scenarios.yaml",
         "examples/sap/customer-account-group-derivation.yaml",
