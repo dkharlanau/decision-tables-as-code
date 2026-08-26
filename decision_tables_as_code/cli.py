@@ -14,6 +14,7 @@ from .explain import explain_table
 from .importer import dump_yaml, import_spreadsheet, load_import_config
 from .inspect import inspect_table
 from .io import load_table
+from .javascript import generate_javascript, generate_typescript_declaration
 from .model import table_from_mapping
 from .package import (
     diff_packages,
@@ -84,6 +85,11 @@ def build_parser() -> argparse.ArgumentParser:
     dmn_export_parser.add_argument("--model-namespace", help="DMN definitions namespace; defaults to a deterministic urn:dtac namespace")
     dmn_export_parser.add_argument("--output", help="Write DMN XML to a file instead of stdout")
 
+    js_export_parser = sub.add_parser("js-export", help="Generate a dependency-free JavaScript ESM runtime")
+    js_export_parser.add_argument("table")
+    js_export_parser.add_argument("--output", help="Write JavaScript ESM to a file instead of stdout")
+    js_export_parser.add_argument("--types-output", help="Also write a TypeScript declaration file")
+
     package_validate_parser = sub.add_parser("package-validate", help="Validate a multi-table decision package")
     package_validate_parser.add_argument("manifest")
     package_validate_parser.add_argument("--format", choices=("text", "json"), default="text", dest="output_format")
@@ -148,6 +154,8 @@ def main(argv: list[str] | None = None) -> int:
             return _dmn_import(args.source, args.decision, args.output)
         if args.command == "dmn-export":
             return _dmn_export(args.table, args.model_namespace, args.output)
+        if args.command == "js-export":
+            return _js_export(args.table, args.output, args.types_output)
         if args.command == "package-validate":
             return _package_validate(args.manifest, args.output_format, args.output)
         if args.command == "package-eval":
@@ -265,6 +273,15 @@ def _dmn_import(source: str, decision_id: str | None, output_path: str | None) -
 
 def _dmn_export(table_path: str, model_namespace: str | None, output_path: str | None) -> int:
     return _emit(dumps_dmn(load_table(table_path), model_namespace=model_namespace), output_path)
+
+
+def _js_export(table_path: str, output_path: str | None, types_output_path: str | None) -> int:
+    table = load_table(table_path)
+    rendered = generate_javascript(table)
+    if types_output_path:
+        Path(types_output_path).write_text(generate_typescript_declaration(table), encoding="utf-8")
+        print(f"Wrote {types_output_path}")
+    return _emit(rendered, output_path)
 
 
 def _package_validate(manifest_path: str, output_format: str, output_path: str | None) -> int:
