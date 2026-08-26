@@ -1,0 +1,50 @@
+version: 1
+table: sap-interface-replication-filter
+scenarios:
+  - id: inactive-record-is-skipped
+    facts:
+      origin_system: MDG
+      target_system: S4
+      change_type: MASTER
+      active: false
+    expect:
+      matched_rules: [inactive-record]
+      outputs:
+        action: SKIP
+        route: NONE
+
+  - id: mdg-loop-is-blocked
+    facts:
+      origin_system: MDG
+      target_system: MDG
+      change_type: ADDRESS
+      active: true
+    expect:
+      matched_rules: [mdg-loop-guard]
+      outputs:
+        action: SKIP
+        route: LOOP_GUARD
+
+  - id: mdg-to-afs-uses-middleware
+    facts:
+      origin_system: MDG
+      target_system: AFS
+      change_type: CLASSIFICATION
+      active: true
+    expect:
+      matched_rules: [mdg-to-afs]
+      outputs:
+        action: SEND
+        route: MIDDLEWARE
+
+  - id: erp-to-mdg-is-sent
+    facts:
+      origin_system: ERP
+      target_system: MDG
+      change_type: MASTER
+      active: true
+    expect:
+      matched_rules: [erp-to-mdg]
+      outputs:
+        action: SEND
+        route: DIRECT
