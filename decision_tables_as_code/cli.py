@@ -12,6 +12,7 @@ from .engine import evaluate
 from .importer import dump_yaml, import_spreadsheet, load_import_config
 from .io import load_table
 from .model import table_from_mapping
+from .render import render_html, render_markdown
 from .scenarios import load_scenarios, run_scenarios
 from .validate import has_errors, validate_table
 
@@ -46,6 +47,13 @@ def build_parser() -> argparse.ArgumentParser:
     test_parser.add_argument("scenarios")
     test_parser.add_argument("--json", action="store_true", dest="json_output")
 
+    render_parser = sub.add_parser("render", help="Render a business-review report")
+    render_parser.add_argument("table")
+    render_parser.add_argument("--format", choices=("markdown", "html"), default="markdown")
+    render_parser.add_argument("--output")
+    render_parser.add_argument("--coverage", action="store_true")
+    render_parser.add_argument("--against", help="Previous table version for semantic change highlighting")
+
     return parser
 
 
@@ -65,6 +73,8 @@ def main(argv: list[str] | None = None) -> int:
             return _import(args.source, args.config, args.output)
         if args.command == "test":
             return _test(args.table, args.scenarios, args.json_output)
+        if args.command == "render":
+            return _render(args.table, args.format, args.output, args.coverage, args.against)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -140,6 +150,23 @@ def _test(table_path: str, scenario_path: str, json_output: bool) -> int:
             print(f"{marker:4} {result.id}: {result.message}")
         print(f"{report.passed}/{report.total} scenarios passed")
     return 0 if report.ok else 1
+
+
+def _render(table_path: str, output_format: str, output_path: str | None, include_coverage: bool, against_path: str | None) -> int:
+    table = load_table(table_path)
+    diagnostics = validate_table(table)
+    coverage = analyze_coverage(table) if include_coverage else None
+    diff = semantic_diff(load_table(against_path), table) if against_path else None
+    if output_format == "html":
+        rendered = render_html(table, diagnostics, coverage=coverage, diff=diff)
+    else:
+        rendered = render_markdown(table, diagnostics, coverage=coverage, diff=diff)
+    if output_path:
+        Path(output_path).write_text(rendered, encoding="utf-8")
+        print(f"Wrote {output_path}")
+    else:
+        print(rendered, end="")
+    return 0
 
 
 def _read_json_arg(value: str):
