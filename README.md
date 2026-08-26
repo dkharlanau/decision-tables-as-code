@@ -1,67 +1,47 @@
 # Decision Tables as Code
 
-Git-native validation, evaluation, coverage analysis, semantic diff, spreadsheet import, executable scenarios, business-review reports, rule governance, and agent-facing inspection for enterprise decision tables.
+Git-native validation, testing, governance, semantic diff, and review for enterprise decision tables stored in spreadsheets or structured files.
 
-Business rules often live in Excel, configuration workbooks, migration templates, or application-specific rule editors. They are easy to change and difficult to review: duplicates are hidden, conflicting rules survive for months, coverage gaps appear only in production, provenance disappears, and a pull request cannot explain what business logic actually changed.
+Business rules often live in Excel, migration workbooks, configuration tables, middleware filters, or runtime-specific rule editors. They are easy to change and difficult to review: conflicts hide between rows, boundary cases are tested manually, provenance disappears, and a pull request cannot explain what business behavior actually changed.
 
-Decision Tables as Code provides a small vendor-neutral format and deterministic CLI so a decision table can be treated like source code while remaining reviewable by business and functional teams.
+Decision Tables as Code (`dtac`) provides a small vendor-neutral model and deterministic CLI so decision logic can be treated like source code without becoming unreadable to functional and business reviewers.
+
+## Start from a real problem
+
+| Problem | Guide | Runnable example |
+| --- | --- | --- |
+| Validate an Excel rule workbook | [Excel decision table validation](docs/use-cases/excel-decision-table-validation.md) | `examples/order-routing.csv` |
+| Test approval/release thresholds | [Approval matrix](docs/use-cases/approval-matrix.md) | `examples/sap/approval-matrix.yaml` |
+| Govern master-data derivations | [Master-data derivation](docs/use-cases/master-data-derivation.md) | `examples/sap/customer-account-group-derivation.yaml` |
+| Make migration/cutover rules executable | [Migration rules](docs/use-cases/migration-rules.md) | `examples/effective-routing.yaml` |
+| Review interface filters and loop prevention | [Interface filtering](docs/use-cases/interface-filtering.md) | `examples/sap/interface-replication-filter.yaml` |
+| Test classification/pricing-style matrices | [Classification rules](docs/use-cases/classification.md) | `examples/sap/tax-classification.yaml` |
+| Prove before/after effective-date behavior | [Effective-dated rules](docs/use-cases/effective-dated-rules.md) | `examples/effective-routing.yaml` |
+| Review routing/fulfillment logic | [Routing](docs/use-cases/routing.md) | `examples/order-routing.yaml` |
+
+See the [documentation home](docs/index.md), [architecture](docs/architecture.md), and [adoption guide](docs/adoption-guide.md).
 
 ## What works now
 
 - canonical YAML/JSON decision-table model
 - `unique`, `first`, and `collect` hit policies
 - equality, membership, ranges, wildcard, existence, and regex conditions
-- structural and semantic validation with stable `DTxxx` diagnostic codes
-- duplicate and exact-conflict detection
-- proven overlap detection for UNIQUE tables
-- FIRST-policy shadowed-rule detection
+- stable `DTxxx` structural/semantic diagnostics
+- duplicate, exact-conflict, proven UNIQUE-overlap, and FIRST-shadow analysis
 - finite-domain gap and ambiguity analysis
-- deterministic evaluation
-- rule provenance: owner, source, ticket, rationale, metadata, and effective dates
-- explicit time-dependent evaluation with `--as-of` and no hidden system clock
-- classified rule-aware semantic diff with CI gate thresholds
-- machine-readable `dtac inspect` for agents and automation
-- rule-level `dtac explain` traces for matched and rejected conditions
+- deterministic evaluation with explicit effective dates and no hidden system clock
+- rule provenance: owner, source, ticket, rationale, metadata, effective window
+- executable scenario packs, including explicit `as_of` cutover cases
+- classified semantic diff: `breaking`, `potentially_breaking`, `non_breaking`, `governance_only`
+- machine-readable `dtac inspect` and rule-level `dtac explain`
 - CSV/XLSX import with explicit column mapping
-- executable YAML/JSON scenario packs and `dtac test`
-- deterministic Markdown and standalone HTML review reports
-- optional coverage and semantic-change summaries in reports
-- stable rule anchors and semantic fingerprints
-- SARIF 2.1.0 output for code-scanning systems
-- native GitHub Actions `::error` / `::warning` annotations
+- deterministic Markdown/standalone HTML business-review reports
+- SARIF 2.1.0 and GitHub Actions annotations
+- JSON Schema and CI-ready CLI
 - runnable SAP-oriented derivation, classification, replication-filter, and approval examples
-- documented SAP/BRFplus adapter boundary without claiming generic deployment compatibility
-- JSON Schema
-- CLI suitable for CI
-- runnable tests and GitHub Actions
+- documented SAP/BRFplus adapter boundary without pretending generic SAP deployment compatibility
 
-## 60-second example
-
-```yaml
-version: 1
-id: order-routing
-hit_policy: unique
-inputs:
-  - name: country
-    type: string
-    domain: [DE, PL]
-  - name: value
-    type: integer
-    domain: [500, 5000]
-outputs:
-  - name: route
-    type: string
-rules:
-  - id: de-high
-    owner: Order Management
-    ticket: CHG-1042
-    effective_from: 2027-01-01
-    when:
-      country: DE
-      value: {gte: 5000}
-    then:
-      route: enterprise
-```
+## 60-second workflow
 
 Install locally:
 
@@ -69,56 +49,32 @@ Install locally:
 python -m pip install -e .
 ```
 
-Validate:
+Validate a table:
 
 ```bash
 dtac validate examples/order-routing.yaml
 ```
 
-Validation includes exact conflicts plus conservative rule-relationship analysis: `DT032` reports proven UNIQUE overlaps and `DT033` reports FIRST rules that are provably unreachable because an earlier rule fully shadows them. See [rule analysis](docs/rule-analysis.md) and the [diagnostic reference](docs/diagnostics.md).
-
-Use GitHub-native workflow annotations:
+Run business scenarios:
 
 ```bash
-dtac validate examples/order-routing.yaml --format github
+dtac test examples/order-routing.yaml examples/order-routing.scenarios.yaml
 ```
 
-Generate SARIF 2.1.0 for GitHub Code Scanning or another SARIF consumer:
+Check finite-domain coverage:
 
 ```bash
-dtac validate examples/order-routing.yaml \
-  --format sarif \
-  --output dtac.sarif
+dtac coverage examples/order-routing.yaml
 ```
 
-Evaluate a decision. Effective-dated tables require an explicit date so the same commit always evaluates deterministically:
-
-```bash
-dtac eval examples/effective-routing.yaml \
-  --facts '{"country":"DE"}' \
-  --as-of 2027-03-01
-```
-
-Explain why each candidate rule matched or failed:
+Explain one decision:
 
 ```bash
 dtac explain examples/order-routing.yaml \
   --facts '{"country":"DE","customer_type":"B2B","order_value":6000}'
 ```
 
-Inspect the table as stable JSON for an agent or CI workflow:
-
-```bash
-dtac inspect examples/order-routing.yaml --output inspect.json
-```
-
-Find business-rule gaps and ambiguity across declared input domains:
-
-```bash
-dtac coverage examples/order-routing.yaml
-```
-
-Compare two versions semantically rather than line-by-line:
+Compare a candidate semantically rather than line-by-line:
 
 ```bash
 dtac diff examples/order-routing.yaml examples/order-routing-v2.yaml \
@@ -126,9 +82,18 @@ dtac diff examples/order-routing.yaml examples/order-routing-v2.yaml \
   --output semantic-diff.json
 ```
 
-The diff classifies changes as `breaking`, `potentially_breaking`, `non_breaking`, `governance_only`, or `none`. CI can fail on all changes, only executable-risk changes, or only proven breaking contract changes. See [classified semantic diff](docs/semantic-diff.md).
+Render a business-readable review artifact:
 
-Import an existing spreadsheet without guessing its schema:
+```bash
+dtac render examples/order-routing-v2.yaml \
+  --against examples/order-routing.yaml \
+  --format html \
+  --output order-routing-change.html
+```
+
+## Excel to Git
+
+Import an existing spreadsheet with an explicit column contract:
 
 ```bash
 dtac import examples/order-routing.csv \
@@ -136,64 +101,55 @@ dtac import examples/order-routing.csv \
   --output /tmp/order-routing.yaml
 ```
 
-The same mapping works for XLSX after installing the optional `excel` dependency. See [spreadsheet importing](docs/importing-spreadsheets.md) for the mapping format and supported cell expressions.
+The same mapping works for XLSX after installing the optional `excel` dependency. See [spreadsheet importing](docs/importing-spreadsheets.md).
 
-Run executable business scenarios:
+## Effective-dated rules
 
-```bash
-dtac test examples/order-routing.yaml examples/order-routing.scenarios.yaml
-```
-
-Scenario packs can assert exact outputs, matched rule IDs, no-match behavior, and expected deterministic engine errors. Use `--json` for machine-readable CI output. See [scenario testing](docs/scenario-testing.md).
-
-Render a business-readable standalone report:
+Effective dates are explicit inputs to evaluation. The engine never substitutes today's date:
 
 ```bash
-dtac render examples/order-routing.yaml \
-  --format html \
-  --coverage \
-  --output order-routing.html
+dtac eval examples/effective-routing.yaml \
+  --facts '{"country":"DE"}' \
+  --as-of 2027-01-01
 ```
 
-Render the current table against a previous version to highlight semantic changes:
+Scenario packs can carry `as_of` too, making cutover boundaries repeatable in CI. YAML-native date values are normalized to ISO dates.
 
-```bash
-dtac render examples/order-routing-v2.yaml \
-  --against examples/order-routing.yaml \
-  --format markdown \
-  --output order-routing-change.md
-```
+## SAP / BRFplus-oriented workflow
 
-Reports include the rule matrix, diagnostics, stable rule anchors, and a semantic fingerprint. HTML is standalone: no server, JavaScript, CDN, or external assets are required. See [business review reports](docs/review-reports.md).
-
-## SAP / BRFplus example gallery
-
-The repository includes locally executable SAP-oriented examples for four common enterprise rule patterns:
+The [SAP example gallery](examples/sap/README.md) contains four locally executable enterprise patterns:
 
 - customer/account-group and BP-role derivation
-- tax classification and missing-data review
-- replication routing plus origin-system loop prevention
-- amount/risk approval thresholds with boundary-value tests
+- classification with explicit missing-data review
+- cross-system replication routing and origin-system loop prevention
+- amount/risk approval thresholds with boundary-value scenarios
 
-Start with the [SAP example gallery](examples/sap/README.md). The [SAP / BRFplus interoperability guide](docs/sap-brfplus.md) explains the conceptual mapping, representability checks, import/export adapter boundary, transport strategy, and explicit limitations. No SAP credentials or licensed system are needed to run the examples.
+The [SAP / BRFplus interoperability guide](docs/sap-brfplus.md) defines the conceptual mapping, representability gate, adapter boundary, transport strategy, and limitations. No SAP credentials or licensed system are required to run the examples.
 
-## Why this is useful in enterprise projects
+## Product boundary
 
-The same pattern appears in SAP and non-SAP work: pricing matrices, partner determination, routing rules, master-data derivations, tax classifications, interface filters, migration mappings, approval matrices, cutover rules, and exception handling. The runtime may be ABAP, BRFplus, DMN, a workflow engine, middleware, or custom code, but the review problem is the same.
+DTAC governs the portable layer before runtime deployment:
 
-This repository focuses on the portable layer before runtime deployment: import or define the logic, validate it, preserve provenance, surface findings directly in CI, prove coverage where possible, execute business regressions, explain outcomes, render it for review, classify changes, and then export or adapt it to the target platform.
+```text
+source -> canonical decision table -> validate/test/coverage/diff -> review -> target adapter
+```
 
-## Format design
+The target runtime may be BRFplus, DMN, ABAP, workflow, middleware, or custom code. DTAC does not claim those systems have identical semantics. A target adapter must explicitly prove that the table's types, operators, hit policy, provenance, and effective-date behavior are representable.
 
-The v1 format is intentionally small. Scalars mean equality, lists mean membership, `"*"` means any present value, and operator objects support `eq`, `ne`, `in`, `not_in`, `gt`, `gte`, `lt`, `lte`, `between`, `exists`, and `regex`.
+See [architecture](docs/architecture.md) and the [staged adoption guide](docs/adoption-guide.md).
 
-See [the v1 specification](docs/specification.md), [diagnostic reference](docs/diagnostics.md), [rule analysis](docs/rule-analysis.md), [rule governance](docs/rule-governance.md), [inspect](docs/inspect.md), [explain](docs/explain.md), [classified semantic diff](docs/semantic-diff.md), [SAP / BRFplus interoperability](docs/sap-brfplus.md), [spreadsheet importing](docs/importing-spreadsheets.md), [scenario testing](docs/scenario-testing.md), [business review reports](docs/review-reports.md), [GitHub integration](docs/github-integration.md), and [CI integration](docs/ci.md).
+## Reference
 
-## Near-term roadmap
-
-The next high-value layers are DMN interoperability, multi-table packages and decision dependency graphs, generated runtime adapters, and stronger compatibility proofs across versions.
-
-See [ROADMAP.md](ROADMAP.md) for the working roadmap.
+- [CLI reference](docs/cli-reference.md) — generated from the actual parser and checked in CI
+- [v1 specification](docs/specification.md)
+- [diagnostics](docs/diagnostics.md)
+- [rule analysis](docs/rule-analysis.md)
+- [rule governance](docs/rule-governance.md)
+- [scenario testing](docs/scenario-testing.md)
+- [classified semantic diff](docs/semantic-diff.md)
+- [business review reports](docs/review-reports.md)
+- [GitHub integration](docs/github-integration.md)
+- [CI integration](docs/ci.md)
 
 ## Related projects
 
@@ -204,6 +160,8 @@ See [ROADMAP.md](ROADMAP.md) for the working roadmap.
 - [Process as Code](https://github.com/dkharlanau/process-as-code)
 - [Enterprise Change Graph](https://github.com/dkharlanau/enterprise-change-graph)
 
-## Status
+## Roadmap and status
 
-Working MVP. The format and CLI are usable, but v1 is still pre-stable and may evolve before a first tagged release.
+Working MVP. The model and CLI are usable, but v1 is still pre-stable. DMN interoperability, multi-table decision graphs, generated runtime adapters, and stronger compatibility proofs remain roadmap work.
+
+See [ROADMAP.md](ROADMAP.md).
