@@ -24,6 +24,11 @@ The product goal is a practical Git-native layer for enterprise decision logic: 
 - [x] SARIF and GitHub annotations for validator findings
 - [x] richer overlap/shadow analysis for numeric and enum conditions
 - [x] rule provenance (`source`, ticket, owner, effective dates)
+- [x] problem-first documentation landing page
+- [x] runnable enterprise use-case gallery
+- [x] architecture and staged adoption guides
+- [x] generated CLI reference with stale-doc CI check
+- [x] documentation link/example integrity tests
 
 ## Interoperability
 
