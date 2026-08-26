@@ -1,0 +1,52 @@
+version: 1
+id: order-routing
+name: Order routing example
+hit_policy: unique
+inputs:
+  - name: country
+    type: string
+    domain: [DE, PL]
+  - name: customer_type
+    type: string
+    domain: [B2B, B2C]
+  - name: order_value
+    type: integer
+    domain: [500, 5000]
+outputs:
+  - name: route
+    type: string
+  - name: approval
+    type: string
+rules:
+  - id: de-b2b-high
+    when:
+      country: DE
+      customer_type: B2B
+      order_value: {gte: 5000}
+    then:
+      route: enterprise-desk
+      approval: director
+  - id: de-b2b-low
+    when:
+      country: DE
+      customer_type: B2B
+      order_value: {lt: 5000}
+    then:
+      route: standard-desk
+      approval: automatic
+  - id: de-b2c
+    when:
+      country: DE
+      customer_type: B2C
+      order_value: "*"
+    then:
+      route: ecommerce
+      approval: automatic
+  - id: pl-all
+    when:
+      country: PL
+      customer_type: "*"
+      order_value: "*"
+    then:
+      route: shared-service
+      approval: automatic
