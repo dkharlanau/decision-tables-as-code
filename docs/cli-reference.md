@@ -10,6 +10,31 @@ python scripts/generate_cli_reference.py
 
 Use `--check` in CI to fail when the checked-in reference is stale.
 
+## `dtac bundle`
+
+```text
+dtac bundle <table> --output <output> [--scenarios <scenarios>] [--against <against>] [--javascript]
+```
+
+| Argument | Required | Default | Choices | Help |
+| --- | --- | --- | --- | --- |
+| `table` | yes | — | — | — |
+| `--output` `<output>` | yes | — | — | Output directory; must not already exist |
+| `--scenarios` `<scenarios>` | no | — | — | Scenario pack to preserve and execute as release evidence |
+| `--against` `<against>` | no | — | — | Approved/baseline table for semantic change evidence |
+| `--javascript` | no | false | — | Include generated JavaScript ESM and TypeScript declaration |
+
+## `dtac bundle-verify`
+
+```text
+dtac bundle-verify <bundle> [--output <output>]
+```
+
+| Argument | Required | Default | Choices | Help |
+| --- | --- | --- | --- | --- |
+| `bundle` | yes | — | — | — |
+| `--output` `<output>` | no | — | — | Write verification JSON to a file instead of stdout |
+
 ## `dtac coverage`
 
 ```text
