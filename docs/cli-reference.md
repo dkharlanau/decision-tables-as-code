@@ -34,6 +34,30 @@ dtac diff <before> <after> [--output <output>] [--fail-on <fail-on>]
 | `--output` `<output>` | no | — | — | Write JSON semantic diff to a file instead of stdout |
 | `--fail-on` `<fail-on>` | no | `any` | `any`, `potentially-breaking`, `breaking`, `never` | Exit 1 for the selected change threshold; default preserves legacy behavior and fails on any change |
 
+## `dtac dmn-export`
+
+```text
+dtac dmn-export <table> [--model-namespace <model-namespace>] [--output <output>]
+```
+
+| Argument | Required | Default | Choices | Help |
+| --- | --- | --- | --- | --- |
+| `table` | yes | — | — | — |
+| `--model-namespace` `<model-namespace>` | no | — | — | DMN definitions namespace; defaults to a deterministic urn:dtac namespace |
+| `--output` `<output>` | no | — | — | Write DMN XML to a file instead of stdout |
+
+## `dtac dmn-import`
+
+```text
+dtac dmn-import <source> [--decision <decision>] [--output <output>]
+```
+
+| Argument | Required | Default | Choices | Help |
+| --- | --- | --- | --- | --- |
+| `source` | yes | — | — | — |
+| `--decision` `<decision>` | no | — | — | Decision id when the DMN document contains multiple decision tables |
+| `--output` `<output>` | no | — | — | Write canonical YAML to a file instead of stdout |
+
 ## `dtac eval`
 
 ```text
