@@ -1,0 +1,49 @@
+version: 1
+id: fulfillment-route
+name: Fulfillment route
+hit_policy: unique
+description: Route an approved case using the upstream approval strategy and an external region fact.
+inputs:
+  - name: approval_strategy
+    type: string
+  - name: region
+    type: string
+    domain: [EU, US]
+outputs:
+  - name: queue
+    type: string
+rules:
+  - id: level-4
+    when:
+      approval_strategy: L4
+    then:
+      queue: MANUAL
+  - id: level-3
+    when:
+      approval_strategy: L3
+    then:
+      queue: REVIEW
+  - id: level-2-eu
+    when:
+      approval_strategy: L2
+      region: EU
+    then:
+      queue: EU_REVIEW
+  - id: level-2-us
+    when:
+      approval_strategy: L2
+      region: US
+    then:
+      queue: US_REVIEW
+  - id: level-1-eu
+    when:
+      approval_strategy: L1
+      region: EU
+    then:
+      queue: EU_AUTO
+  - id: level-1-us
+    when:
+      approval_strategy: L1
+      region: US
+    then:
+      queue: US_AUTO
