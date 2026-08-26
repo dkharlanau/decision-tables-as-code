@@ -31,6 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
     eval_parser = sub.add_parser("eval", help="Evaluate facts against a decision table")
     eval_parser.add_argument("table")
     eval_parser.add_argument("--facts", required=True, help="JSON object or @path/to/facts.json")
+    eval_parser.add_argument("--as-of", help="Explicit YYYY-MM-DD date used for effective-dated rules")
 
     diff_parser = sub.add_parser("diff", help="Create a semantic diff between two tables")
     diff_parser.add_argument("before")
@@ -67,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "validate":
             return _validate(args.table, args.output_format, args.output, args.legacy_json)
         if args.command == "eval":
-            return _eval(args.table, args.facts)
+            return _eval(args.table, args.facts, args.as_of)
         if args.command == "diff":
             return _diff(args.before, args.after)
         if args.command == "coverage":
@@ -115,12 +116,12 @@ def _validate(path: str, output_format: str, output_path: str | None, legacy_jso
     return 1 if has_errors(diagnostics) else 0
 
 
-def _eval(path: str, raw_facts: str) -> int:
+def _eval(path: str, raw_facts: str, as_of: str | None = None) -> int:
     table = load_table(path)
     facts = _read_json_arg(raw_facts)
     if not isinstance(facts, dict):
         raise ValueError("--facts must resolve to a JSON object")
-    result = evaluate(table, facts)
+    result = evaluate(table, facts, as_of=as_of)
     print(json.dumps(asdict(result), indent=2, default=str))
     return 0
 
