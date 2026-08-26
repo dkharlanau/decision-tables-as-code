@@ -30,6 +30,13 @@ class Rule:
     then: Mapping[str, Any]
     description: str | None = None
     priority: int | None = None
+    owner: str | None = None
+    source: str | None = None
+    ticket: str | None = None
+    rationale: str | None = None
+    effective_from: str | None = None
+    effective_to: str | None = None
+    metadata: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -150,10 +157,33 @@ def _rule_from_mapping(raw: Mapping[str, Any], index: int) -> Rule:
     priority = raw.get("priority")
     if priority is not None and not isinstance(priority, int):
         raise ValueError(f"rule {rule_id!r}: priority must be an integer")
+
+    metadata = raw.get("metadata", {})
+    if metadata is None:
+        metadata = {}
+    if not isinstance(metadata, Mapping):
+        raise ValueError(f"rule {rule_id!r}: metadata must be an object")
+
     return Rule(
         id=rule_id,
         when=dict(when),
         then=dict(then),
-        description=raw.get("description"),
+        description=_optional_string(raw, "description", rule_id),
         priority=priority,
+        owner=_optional_string(raw, "owner", rule_id),
+        source=_optional_string(raw, "source", rule_id),
+        ticket=_optional_string(raw, "ticket", rule_id),
+        rationale=_optional_string(raw, "rationale", rule_id),
+        effective_from=_optional_string(raw, "effective_from", rule_id),
+        effective_to=_optional_string(raw, "effective_to", rule_id),
+        metadata=dict(metadata),
     )
+
+
+def _optional_string(raw: Mapping[str, Any], field_name: str, rule_id: str) -> str | None:
+    value = raw.get(field_name)
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValueError(f"rule {rule_id!r}: {field_name} must be a string")
+    return value
