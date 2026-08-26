@@ -19,7 +19,7 @@ The product goal is a practical Git-native layer for enterprise decision logic: 
 ## Adoption layer
 
 - [x] Excel/CSV importer with explicit column mapping
-- [ ] scenario file format and `dtac test`
+- [x] scenario file format and `dtac test`
 - [ ] Markdown/HTML rendering for business review
 - [ ] SARIF or GitHub annotations for validator findings
 - [ ] richer overlap/shadow analysis for numeric and enum conditions

@@ -23,3 +23,4 @@ jobs:
       - run: dtac import examples/order-routing.csv --config examples/order-routing.import.yaml --output /tmp/imported.yaml
       - run: dtac validate /tmp/imported.yaml
       - run: dtac coverage /tmp/imported.yaml
+      - run: dtac test examples/order-routing.yaml examples/order-routing.scenarios.yaml

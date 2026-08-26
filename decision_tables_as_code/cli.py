@@ -12,6 +12,7 @@ from .engine import evaluate
 from .importer import dump_yaml, import_spreadsheet, load_import_config
 from .io import load_table
 from .model import table_from_mapping
+from .scenarios import load_scenarios, run_scenarios
 from .validate import has_errors, validate_table
 
 
@@ -40,6 +41,11 @@ def build_parser() -> argparse.ArgumentParser:
     import_parser.add_argument("--config", required=True)
     import_parser.add_argument("--output")
 
+    test_parser = sub.add_parser("test", help="Run executable decision scenarios")
+    test_parser.add_argument("table")
+    test_parser.add_argument("scenarios")
+    test_parser.add_argument("--json", action="store_true", dest="json_output")
+
     return parser
 
 
@@ -57,6 +63,8 @@ def main(argv: list[str] | None = None) -> int:
             return _coverage(args.table, args.max_combinations)
         if args.command == "import":
             return _import(args.source, args.config, args.output)
+        if args.command == "test":
+            return _test(args.table, args.scenarios, args.json_output)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -120,6 +128,18 @@ def _import(source: str, config_path: str, output_path: str | None) -> int:
     else:
         print(rendered, end="")
     return 0
+
+
+def _test(table_path: str, scenario_path: str, json_output: bool) -> int:
+    report = run_scenarios(load_table(table_path), load_scenarios(scenario_path))
+    if json_output:
+        print(json.dumps(report.to_dict(), indent=2, default=str))
+    else:
+        for result in report.results:
+            marker = "PASS" if result.passed else "FAIL"
+            print(f"{marker:4} {result.id}: {result.message}")
+        print(f"{report.passed}/{report.total} scenarios passed")
+    return 0 if report.ok else 1
 
 
 def _read_json_arg(value: str):
