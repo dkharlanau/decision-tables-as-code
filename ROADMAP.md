@@ -23,14 +23,14 @@ The product goal is a practical Git-native layer for enterprise decision logic: 
 - [x] Markdown/HTML rendering for business review
 - [x] SARIF and GitHub annotations for validator findings
 - [x] richer overlap/shadow analysis for numeric and enum conditions
-- [ ] rule provenance (`source`, ticket, owner, effective dates)
+- [x] rule provenance (`source`, ticket, owner, effective dates)
 
 ## Interoperability
 
 - [ ] DMN 1.4 import/export subset
 - [ ] BRFplus-oriented adapter examples
 - [ ] generated runtime adapters for Python/JavaScript
-- [ ] machine-readable semantic change report
+- [x] machine-readable semantic change report
 
 ## Scale and governance
 
@@ -38,8 +38,9 @@ The product goal is a practical Git-native layer for enterprise decision logic: 
 - [ ] decision dependency graph
 - [ ] policy packs for organization-specific checks
 - [ ] approval metadata and signed release bundles
-- [ ] backward-compatibility checks between table versions
-- [ ] agent-facing inspect/explain interface
+- [ ] deeper backward-compatibility proofs between table versions
+- [x] agent-facing inspect/explain interface
+- [x] classified semantic-diff gates for CI
 
 ## Product test
 

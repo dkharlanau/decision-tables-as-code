@@ -45,9 +45,16 @@ def build_parser() -> argparse.ArgumentParser:
     inspect_parser.add_argument("table")
     inspect_parser.add_argument("--output", help="Write JSON inspection output to a file instead of stdout")
 
-    diff_parser = sub.add_parser("diff", help="Create a semantic diff between two tables")
+    diff_parser = sub.add_parser("diff", help="Create a classified semantic diff between two tables")
     diff_parser.add_argument("before")
     diff_parser.add_argument("after")
+    diff_parser.add_argument("--output", help="Write JSON semantic diff to a file instead of stdout")
+    diff_parser.add_argument(
+        "--fail-on",
+        choices=("any", "potentially-breaking", "breaking", "never"),
+        default="any",
+        help="Exit 1 for the selected change threshold; default preserves legacy behavior and fails on any change",
+    )
 
     coverage_parser = sub.add_parser("coverage", help="Evaluate finite input domains for gaps and ambiguity")
     coverage_parser.add_argument("table")
@@ -86,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "inspect":
             return _inspect(args.table, args.output)
         if args.command == "diff":
-            return _diff(args.before, args.after)
+            return _diff(args.before, args.after, args.output, args.fail_on)
         if args.command == "coverage":
             return _coverage(args.table, args.max_combinations)
         if args.command == "import":
@@ -165,10 +172,22 @@ def _inspect(path: str, output_path: str | None = None) -> int:
     return 0
 
 
-def _diff(before_path: str, after_path: str) -> int:
+def _diff(before_path: str, after_path: str, output_path: str | None = None, fail_on: str = "any") -> int:
     result = semantic_diff(load_table(before_path), load_table(after_path))
-    print(json.dumps(result.to_dict(), indent=2, default=str))
-    return 1 if result.changed else 0
+    payload = json.dumps(result.to_dict(), indent=2, default=str) + "\n"
+    if output_path:
+        Path(output_path).write_text(payload, encoding="utf-8")
+        print(f"Wrote {output_path}")
+    else:
+        print(payload, end="")
+
+    should_fail = {
+        "any": result.changed,
+        "potentially-breaking": result.classification in {"potentially_breaking", "breaking"},
+        "breaking": result.classification == "breaking",
+        "never": False,
+    }[fail_on]
+    return 1 if should_fail else 0
 
 
 def _coverage(path: str, max_combinations: int) -> int:

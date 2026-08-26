@@ -1,8 +1,8 @@
 # Decision Tables as Code
 
-Git-native validation, evaluation, coverage analysis, semantic diff, spreadsheet import, executable scenarios, business-review reports, and GitHub-native diagnostics for enterprise decision tables.
+Git-native validation, evaluation, coverage analysis, semantic diff, spreadsheet import, executable scenarios, business-review reports, rule governance, and agent-facing inspection for enterprise decision tables.
 
-Business rules often live in Excel, configuration workbooks, migration templates, or application-specific rule editors. They are easy to change and difficult to review: duplicates are hidden, conflicting rules survive for months, coverage gaps appear only in production, and a pull request cannot explain what business logic actually changed.
+Business rules often live in Excel, configuration workbooks, migration templates, or application-specific rule editors. They are easy to change and difficult to review: duplicates are hidden, conflicting rules survive for months, coverage gaps appear only in production, provenance disappears, and a pull request cannot explain what business logic actually changed.
 
 Decision Tables as Code provides a small vendor-neutral format and deterministic CLI so a decision table can be treated like source code while remaining reviewable by business and functional teams.
 
@@ -17,7 +17,11 @@ Decision Tables as Code provides a small vendor-neutral format and deterministic
 - FIRST-policy shadowed-rule detection
 - finite-domain gap and ambiguity analysis
 - deterministic evaluation
-- rule-aware semantic diff
+- rule provenance: owner, source, ticket, rationale, metadata, and effective dates
+- explicit time-dependent evaluation with `--as-of` and no hidden system clock
+- classified rule-aware semantic diff with CI gate thresholds
+- machine-readable `dtac inspect` for agents and automation
+- rule-level `dtac explain` traces for matched and rejected conditions
 - CSV/XLSX import with explicit column mapping
 - executable YAML/JSON scenario packs and `dtac test`
 - deterministic Markdown and standalone HTML review reports
@@ -47,6 +51,9 @@ outputs:
     type: string
 rules:
   - id: de-high
+    owner: Order Management
+    ticket: CHG-1042
+    effective_from: 2027-01-01
     when:
       country: DE
       value: {gte: 5000}
@@ -82,13 +89,25 @@ dtac validate examples/order-routing.yaml \
   --output dtac.sarif
 ```
 
-The validator's exit code is independent of the report format: error findings still return `1`. See [GitHub Actions and Code Scanning](docs/github-integration.md).
-
-Evaluate a decision:
+Evaluate a decision. Effective-dated tables require an explicit date so the same commit always evaluates deterministically:
 
 ```bash
-dtac eval examples/order-routing.yaml \
+dtac eval examples/effective-routing.yaml \
+  --facts '{"country":"DE"}' \
+  --as-of 2027-03-01
+```
+
+Explain why each candidate rule matched or failed:
+
+```bash
+dtac explain examples/order-routing.yaml \
   --facts '{"country":"DE","customer_type":"B2B","order_value":6000}'
+```
+
+Inspect the table as stable JSON for an agent or CI workflow:
+
+```bash
+dtac inspect examples/order-routing.yaml --output inspect.json
 ```
 
 Find business-rule gaps and ambiguity across declared input domains:
@@ -100,8 +119,12 @@ dtac coverage examples/order-routing.yaml
 Compare two versions semantically rather than line-by-line:
 
 ```bash
-dtac diff examples/order-routing.yaml examples/order-routing-v2.yaml
+dtac diff examples/order-routing.yaml examples/order-routing-v2.yaml \
+  --fail-on never \
+  --output semantic-diff.json
 ```
+
+The diff classifies changes as `breaking`, `potentially_breaking`, `non_breaking`, `governance_only`, or `none`. CI can fail on all changes, only executable-risk changes, or only proven breaking contract changes. See [classified semantic diff](docs/semantic-diff.md).
 
 Import an existing spreadsheet without guessing its schema:
 
@@ -145,17 +168,17 @@ Reports include the rule matrix, diagnostics, stable rule anchors, and a semanti
 
 The same pattern appears in SAP and non-SAP work: pricing matrices, partner determination, routing rules, master-data derivations, tax classifications, interface filters, migration mappings, approval matrices, cutover rules, and exception handling. The runtime may be ABAP, BRFplus, DMN, a workflow engine, middleware, or custom code, but the review problem is the same.
 
-This repository focuses on the portable layer before runtime deployment: import or define the logic, validate it, surface findings directly in CI, prove coverage where possible, execute business regressions, render it for review, compare changes, and then export or adapt it to the target platform.
+This repository focuses on the portable layer before runtime deployment: import or define the logic, validate it, preserve provenance, surface findings directly in CI, prove coverage where possible, execute business regressions, explain outcomes, render it for review, classify changes, and then export or adapt it to the target platform.
 
 ## Format design
 
 The v1 format is intentionally small. Scalars mean equality, lists mean membership, `"*"` means any present value, and operator objects support `eq`, `ne`, `in`, `not_in`, `gt`, `gte`, `lt`, `lte`, `between`, `exists`, and `regex`.
 
-See [the v1 specification](docs/specification.md), [diagnostic reference](docs/diagnostics.md), [rule analysis](docs/rule-analysis.md), [spreadsheet importing](docs/importing-spreadsheets.md), [scenario testing](docs/scenario-testing.md), [business review reports](docs/review-reports.md), [GitHub integration](docs/github-integration.md), and [CI integration](docs/ci.md).
+See [the v1 specification](docs/specification.md), [diagnostic reference](docs/diagnostics.md), [rule analysis](docs/rule-analysis.md), [rule governance](docs/rule-governance.md), [inspect](docs/inspect.md), [explain](docs/explain.md), [classified semantic diff](docs/semantic-diff.md), [spreadsheet importing](docs/importing-spreadsheets.md), [scenario testing](docs/scenario-testing.md), [business review reports](docs/review-reports.md), [GitHub integration](docs/github-integration.md), and [CI integration](docs/ci.md).
 
 ## Near-term roadmap
 
-The next high-value layers are provenance and effective dates, DMN interoperability, machine-readable inspect/explain reports, and SAP/BRFplus-oriented examples.
+The next high-value layers are DMN interoperability, SAP/BRFplus-oriented examples, multi-table packages and decision dependency graphs, and stronger compatibility proofs across versions.
 
 See [ROADMAP.md](ROADMAP.md) for the working roadmap.
 
