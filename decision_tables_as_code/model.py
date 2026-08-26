@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date, datetime
 from typing import Any, Mapping
 
 
@@ -174,8 +175,8 @@ def _rule_from_mapping(raw: Mapping[str, Any], index: int) -> Rule:
         source=_optional_string(raw, "source", rule_id),
         ticket=_optional_string(raw, "ticket", rule_id),
         rationale=_optional_string(raw, "rationale", rule_id),
-        effective_from=_optional_string(raw, "effective_from", rule_id),
-        effective_to=_optional_string(raw, "effective_to", rule_id),
+        effective_from=_optional_date_string(raw, "effective_from", rule_id),
+        effective_to=_optional_date_string(raw, "effective_to", rule_id),
         metadata=dict(metadata),
     )
 
@@ -187,3 +188,16 @@ def _optional_string(raw: Mapping[str, Any], field_name: str, rule_id: str) -> s
     if not isinstance(value, str):
         raise ValueError(f"rule {rule_id!r}: {field_name} must be a string")
     return value
+
+
+def _optional_date_string(raw: Mapping[str, Any], field_name: str, rule_id: str) -> str | None:
+    value = raw.get(field_name)
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, str):
+        return value
+    raise ValueError(f"rule {rule_id!r}: {field_name} must be an ISO date string")

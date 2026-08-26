@@ -18,6 +18,17 @@ def test_example_scenario_pack_passes():
     assert report.passed == 5
 
 
+def test_effective_dated_scenario_pack_passes_with_explicit_dates():
+    report = run_scenarios(
+        load_table(ROOT / "examples" / "effective-routing.yaml"),
+        load_scenarios(ROOT / "examples" / "effective-routing.scenarios.yaml"),
+    )
+    assert report.ok
+    assert report.total == 4
+    assert report.results[0].actual["as_of"] == "2026-12-31"
+    assert report.results[1].actual["as_of"] == "2027-01-01"
+
+
 def test_scenario_reports_output_mismatch():
     table = table_from_mapping({
         "version": 1,

@@ -28,6 +28,24 @@ def test_html_report_is_standalone_and_navigable():
     assert f'id="{rule_anchor("pl-all")}"' in report
 
 
+def test_review_reports_preserve_rule_governance_and_effective_dates():
+    table = load_table(ROOT / "examples" / "effective-routing.yaml")
+    markdown = render_markdown(table, validate_table(table))
+    html = render_html(table, validate_table(table))
+
+    assert "## Rule governance" in markdown
+    assert "Order Management" in markdown
+    assert "CHG-1042" in markdown
+    assert "2026-12-31" in markdown
+    assert "2027-01-01" in markdown
+
+    assert 'id="governance"' in html
+    assert "Order Management" in html
+    assert "CHG-1042" in html
+    assert "2026-12-31" in html
+    assert "2027-01-01" in html
+
+
 def test_diff_report_marks_changed_rule_and_removed_summary():
     before = load_table(ROOT / "examples" / "order-routing.yaml")
     after = load_table(ROOT / "examples" / "order-routing-v2.yaml")

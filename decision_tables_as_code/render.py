@@ -9,7 +9,7 @@ from typing import Any, Iterable
 
 from .coverage import CoverageReport
 from .diff import TableDiff
-from .model import DecisionTable
+from .model import DecisionTable, Rule
 from .validate import Diagnostic
 
 
@@ -98,6 +98,16 @@ def render_markdown(
     for rule in table.rules:
         lines.append(f"- [{_md_escape(rule.id)}](#{rule_anchor(rule.id)})")
 
+    governed_rules = [(rule, _rule_governance_items(rule)) for rule in table.rules]
+    governed_rules = [(rule, items) for rule, items in governed_rules if items]
+    if governed_rules:
+        lines.extend(["", "## Rule governance", ""])
+        for rule, items in governed_rules:
+            lines.extend([f"### {_md_escape(rule.id)}", ""])
+            for label, value in items:
+                lines.append(f"- **{_md_escape(label)}:** `{_md_escape(_format_value(value))}`")
+            lines.append("")
+
     lines.extend(["", "## Diagnostics", ""])
     if not diagnostics:
         lines.append("No validation findings.")
@@ -173,6 +183,26 @@ def render_html(
   <details><summary>Removed rules</summary><ul>{removed}</ul></details>
 </section>"""
 
+    governance_cards: list[str] = []
+    for rule in table.rules:
+        items = _rule_governance_items(rule)
+        if not items:
+            continue
+        detail_html = "".join(
+            f"<dt>{html.escape(label)}</dt><dd>{html.escape(_format_value(value))}</dd>"
+            for label, value in items
+        )
+        governance_cards.append(
+            f'<article class="governance-card"><h3><a href="#{rule_anchor(rule.id)}">{html.escape(rule.id)}</a></h3><dl>{detail_html}</dl></article>'
+        )
+    governance_html = ""
+    if governance_cards:
+        governance_html = f"""
+<section id="governance">
+  <h2>Rule governance</h2>
+  <div class="governance-grid">{''.join(governance_cards)}</div>
+</section>"""
+
     index_html = "".join(
         f'<a href="#{rule_anchor(rule.id)}">{html.escape(rule.id)}</a>' for rule in table.rules
     )
@@ -198,6 +228,8 @@ dl {{ display: grid; grid-template-columns: minmax(120px, 220px) 1fr; gap: 6px 1
 .table-wrap {{ overflow: auto; border: 1px solid currentColor; border-radius: 10px; max-height: 70vh; }}
 table {{ border-collapse: collapse; width: max-content; min-width: 100%; }} th, td {{ border-bottom: 1px solid currentColor; padding: 9px 12px; text-align: left; vertical-align: top; }} thead th {{ position: sticky; top: 0; background: Canvas; z-index: 2; }} tbody th {{ position: sticky; left: 0; background: Canvas; z-index: 1; }}
 code {{ white-space: nowrap; }} .rule-link {{ color: inherit; }}
+.governance-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }}
+.governance-card {{ border: 1px solid currentColor; border-radius: 10px; padding: 14px; }} .governance-card h3 {{ margin-top: 0; }}
 .change {{ font-weight: 700; }} .diagnostic {{ margin-bottom: 8px; }} .diagnostic span {{ margin-left: 8px; }}
 footer {{ margin-top: 40px; font-size: .9rem; opacity: .7; }}
 </style>
@@ -226,6 +258,7 @@ footer {{ margin-top: 40px; font-size: .9rem; opacity: .7; }}
   <details><summary>Rule index ({len(table.rules)})</summary><nav class="rule-index">{index_html}</nav></details>
   <div class="table-wrap"><table><thead><tr>{header_cells}</tr></thead><tbody>{''.join(rows)}</tbody></table></div>
 </section>
+{governance_html}
 <section id="diagnostics"><h2>Diagnostics</h2><ul>{diagnostics_html}</ul></section>
 <footer>Semantic fingerprint: <code>{table_fingerprint(table)}</code></footer>
 </main>
@@ -243,6 +276,21 @@ def _rule_statuses(table: DecisionTable, diff: TableDiff | None) -> dict[str, st
     for item in diff.changed_rules:
         statuses[item["id"]] = "changed"
     return statuses
+
+
+def _rule_governance_items(rule: Rule) -> list[tuple[str, Any]]:
+    values = [
+        ("Owner", rule.owner),
+        ("Source", rule.source),
+        ("Ticket", rule.ticket),
+        ("Rationale", rule.rationale),
+        ("Effective from", rule.effective_from),
+        ("Effective to", rule.effective_to),
+    ]
+    items = [(label, value) for label, value in values if value is not None]
+    if rule.metadata:
+        items.append(("Metadata", dict(rule.metadata)))
+    return items
 
 
 def _format_condition(value: Any) -> str:
