@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
+from datetime import date
 from typing import Any
 
 from .matcher import condition_matches
@@ -90,6 +91,35 @@ def _rule_diagnostics(table: DecisionTable) -> list[Diagnostic]:
         missing_outputs = sorted(output_names - set(rule.then))
         for name in missing_outputs:
             diagnostics.append(Diagnostic("DT023", "warning", f"Rule does not set output {name!r}", f"{path}.then"))
+
+        diagnostics.extend(_effective_date_diagnostics(rule, path))
+    return diagnostics
+
+
+def _effective_date_diagnostics(rule: Any, path: str) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    parsed: dict[str, date] = {}
+    for field_name in ("effective_from", "effective_to"):
+        value = getattr(rule, field_name)
+        if value is None:
+            continue
+        try:
+            parsed[field_name] = date.fromisoformat(value)
+        except ValueError:
+            diagnostics.append(Diagnostic(
+                "DT024",
+                "error",
+                f"{field_name} must be an ISO date in YYYY-MM-DD format",
+                f"{path}.{field_name}",
+            ))
+    if parsed.get("effective_from") and parsed.get("effective_to"):
+        if parsed["effective_from"] > parsed["effective_to"]:
+            diagnostics.append(Diagnostic(
+                "DT025",
+                "error",
+                "effective_from must be on or before effective_to",
+                path,
+            ))
     return diagnostics
 
 
