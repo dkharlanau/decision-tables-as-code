@@ -1,0 +1,74 @@
+version: 1
+id: sap-approval-matrix
+name: SAP approval matrix
+hit_policy: unique
+description: Fictional workflow example for deriving an approval strategy from amount and risk level.
+metadata:
+  domain: SAP workflow
+  pattern: approval-matrix
+  target_runtime: BRFplus-or-workflow-adapter
+  example_data: fictional
+inputs:
+  - name: company_code
+    type: string
+    domain: ["1000", "2000"]
+  - name: amount
+    type: number
+  - name: risk_level
+    type: string
+    domain: [LOW, HIGH]
+outputs:
+  - name: approval_strategy
+    type: string
+  - name: auto_approve
+    type: boolean
+rules:
+  - id: low-risk-small
+    owner: Finance Process Governance
+    source: Example approval matrix
+    when:
+      risk_level: LOW
+      amount: {lt: 1000}
+    then:
+      approval_strategy: L1
+      auto_approve: true
+
+  - id: low-risk-medium
+    owner: Finance Process Governance
+    source: Example approval matrix
+    when:
+      risk_level: LOW
+      amount: {gte: 1000, lt: 10000}
+    then:
+      approval_strategy: L2
+      auto_approve: false
+
+  - id: low-risk-large
+    owner: Finance Process Governance
+    source: Example approval matrix
+    when:
+      risk_level: LOW
+      amount: {gte: 10000}
+    then:
+      approval_strategy: L3
+      auto_approve: false
+
+  - id: high-risk-below-threshold
+    owner: Finance Process Governance
+    source: Example approval matrix
+    when:
+      risk_level: HIGH
+      amount: {lt: 5000}
+    then:
+      approval_strategy: L3
+      auto_approve: false
+
+  - id: high-risk-above-threshold
+    owner: Finance Process Governance
+    source: Example approval matrix
+    when:
+      risk_level: HIGH
+      amount: {gte: 5000}
+    then:
+      approval_strategy: L4
+      auto_approve: false

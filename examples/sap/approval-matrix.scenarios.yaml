@@ -1,0 +1,57 @@
+version: 1
+table: sap-approval-matrix
+scenarios:
+  - id: low-risk-small
+    facts:
+      company_code: "1000"
+      amount: 500
+      risk_level: LOW
+    expect:
+      matched_rules: [low-risk-small]
+      outputs:
+        approval_strategy: L1
+        auto_approve: true
+
+  - id: low-risk-exactly-1000
+    facts:
+      company_code: "1000"
+      amount: 1000
+      risk_level: LOW
+    expect:
+      matched_rules: [low-risk-medium]
+      outputs:
+        approval_strategy: L2
+        auto_approve: false
+
+  - id: low-risk-exactly-10000
+    facts:
+      company_code: "2000"
+      amount: 10000
+      risk_level: LOW
+    expect:
+      matched_rules: [low-risk-large]
+      outputs:
+        approval_strategy: L3
+        auto_approve: false
+
+  - id: high-risk-below-threshold
+    facts:
+      company_code: "1000"
+      amount: 4999
+      risk_level: HIGH
+    expect:
+      matched_rules: [high-risk-below-threshold]
+      outputs:
+        approval_strategy: L3
+        auto_approve: false
+
+  - id: high-risk-exactly-threshold
+    facts:
+      company_code: "1000"
+      amount: 5000
+      risk_level: HIGH
+    expect:
+      matched_rules: [high-risk-above-threshold]
+      outputs:
+        approval_strategy: L4
+        auto_approve: false

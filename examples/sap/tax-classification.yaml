@@ -1,0 +1,66 @@
+version: 1
+id: sap-tax-classification
+name: SAP tax-classification derivation
+hit_policy: unique
+description: Fictional example for deriving a customer tax classification and review flag from country, customer type, and tax-number presence.
+metadata:
+  domain: SAP customer master data
+  pattern: classification
+  target_runtime: BRFplus-or-custom-adapter
+  example_data: fictional
+inputs:
+  - name: country
+    type: string
+    domain: [DE, FR, US]
+  - name: customer_type
+    type: string
+    domain: [BUSINESS, CONSUMER]
+  - name: tax_number_present
+    type: boolean
+    domain: [true, false]
+outputs:
+  - name: tax_classification
+    type: string
+  - name: review_required
+    type: boolean
+rules:
+  - id: eu-business-with-tax-number
+    owner: Tax Data Governance
+    source: Example tax-classification matrix
+    when:
+      country: [DE, FR]
+      customer_type: BUSINESS
+      tax_number_present: true
+    then:
+      tax_classification: "1"
+      review_required: false
+
+  - id: eu-business-missing-tax-number
+    owner: Tax Data Governance
+    source: Example tax-classification matrix
+    when:
+      country: [DE, FR]
+      customer_type: BUSINESS
+      tax_number_present: false
+    then:
+      tax_classification: REVIEW
+      review_required: true
+
+  - id: eu-consumer
+    owner: Tax Data Governance
+    source: Example tax-classification matrix
+    when:
+      country: [DE, FR]
+      customer_type: CONSUMER
+    then:
+      tax_classification: "0"
+      review_required: false
+
+  - id: us-customer
+    owner: Tax Data Governance
+    source: Example tax-classification matrix
+    when:
+      country: US
+    then:
+      tax_classification: "0"
+      review_required: false

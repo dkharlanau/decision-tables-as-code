@@ -1,0 +1,80 @@
+version: 1
+id: sap-customer-account-group-derivation
+name: SAP customer account-group derivation
+hit_policy: unique
+description: Fictional migration example for deriving a target customer grouping and BP role from source context.
+metadata:
+  domain: SAP master data
+  pattern: derivation
+  target_runtime: BRFplus-or-custom-adapter
+  example_data: fictional
+inputs:
+  - name: source_system
+    type: string
+    domain: [LEGACY_A, LEGACY_B, CRM]
+  - name: customer_role
+    type: string
+    domain: [SOLD_TO, SHIP_TO, PAYER, BILL_TO]
+  - name: is_employee
+    type: boolean
+    domain: [true, false]
+outputs:
+  - name: account_group
+    type: string
+  - name: bp_role
+    type: string
+rules:
+  - id: employee
+    owner: Master Data Governance
+    source: Migration design workbook
+    ticket: CHG-MDG-001
+    rationale: Employees are governed separately from commercial customers.
+    when:
+      is_employee: true
+    then:
+      account_group: ZEMP
+      bp_role: EMPLOYEE
+
+  - id: legacy-a-sold-to
+    owner: Master Data Governance
+    source: Migration design workbook
+    when:
+      source_system: LEGACY_A
+      customer_role: SOLD_TO
+      is_employee: false
+    then:
+      account_group: Z001
+      bp_role: CUSTOMER
+
+  - id: legacy-a-payer
+    owner: Master Data Governance
+    source: Migration design workbook
+    when:
+      source_system: LEGACY_A
+      customer_role: PAYER
+      is_employee: false
+    then:
+      account_group: Z002
+      bp_role: FI_CUSTOMER
+
+  - id: legacy-b-commercial
+    owner: Master Data Governance
+    source: Migration design workbook
+    when:
+      source_system: LEGACY_B
+      customer_role: [SOLD_TO, SHIP_TO, BILL_TO, PAYER]
+      is_employee: false
+    then:
+      account_group: Z101
+      bp_role: CUSTOMER
+
+  - id: crm-commercial
+    owner: Master Data Governance
+    source: CRM harmonization rules
+    when:
+      source_system: CRM
+      customer_role: [SOLD_TO, SHIP_TO, BILL_TO, PAYER]
+      is_employee: false
+    then:
+      account_group: ZCRM
+      bp_role: CUSTOMER

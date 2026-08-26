@@ -1,0 +1,84 @@
+version: 1
+id: sap-interface-replication-filter
+name: SAP interface replication filter
+hit_policy: unique
+description: Fictional cross-system rule set for deciding whether a master-data change should be sent, skipped, or routed through middleware.
+metadata:
+  domain: SAP integration
+  pattern: routing-and-loop-prevention
+  target_runtime: BRFplus-or-integration-adapter
+  example_data: fictional
+inputs:
+  - name: origin_system
+    type: string
+    domain: [MDG, ERP]
+  - name: target_system
+    type: string
+    domain: [MDG, S4, AFS]
+  - name: change_type
+    type: string
+    domain: [MASTER, ADDRESS, CLASSIFICATION]
+  - name: active
+    type: boolean
+    domain: [true, false]
+outputs:
+  - name: action
+    type: string
+  - name: route
+    type: string
+rules:
+  - id: inactive-record
+    owner: Integration Operations
+    source: Replication control matrix
+    rationale: Inactive records are not distributed by this example policy.
+    when:
+      active: false
+    then:
+      action: SKIP
+      route: NONE
+
+  - id: mdg-loop-guard
+    owner: Integration Architecture
+    source: Replication control matrix
+    ticket: CHG-INT-014
+    rationale: Prevent a change originating in MDG from being sent back to MDG.
+    when:
+      origin_system: MDG
+      target_system: MDG
+      active: true
+    then:
+      action: SKIP
+      route: LOOP_GUARD
+
+  - id: mdg-to-s4
+    owner: Integration Operations
+    source: Replication control matrix
+    when:
+      origin_system: MDG
+      target_system: S4
+      active: true
+    then:
+      action: SEND
+      route: DIRECT
+
+  - id: mdg-to-afs
+    owner: Integration Operations
+    source: Replication control matrix
+    when:
+      origin_system: MDG
+      target_system: AFS
+      active: true
+    then:
+      action: SEND
+      route: MIDDLEWARE
+
+  - id: erp-to-mdg
+    owner: Integration Operations
+    source: Replication control matrix
+    when:
+      origin_system: ERP
+      target_system: MDG
+      active: true
+    then:
+      action: SEND
+      route: DIRECT
