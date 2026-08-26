@@ -86,12 +86,15 @@ def run_scenarios(table: DecisionTable, document: Mapping[str, Any]) -> Scenario
 
         facts = raw.get("facts")
         expected = raw.get("expect")
+        as_of = raw.get("as_of")
         if not isinstance(facts, Mapping):
             raise ValueError(f"Scenario {scenario_id!r}: facts must be an object")
         if not isinstance(expected, Mapping):
             raise ValueError(f"Scenario {scenario_id!r}: expect must be an object")
+        if as_of is not None and not isinstance(as_of, str):
+            raise ValueError(f"Scenario {scenario_id!r}: as_of must be an ISO date string")
 
-        results.append(_run_one(table, scenario_id, dict(facts), dict(expected)))
+        results.append(_run_one(table, scenario_id, dict(facts), dict(expected), as_of=as_of))
 
     passed = sum(item.passed for item in results)
     return ScenarioReport(len(results), passed, len(results) - passed, tuple(results))
@@ -102,15 +105,19 @@ def _run_one(
     scenario_id: str,
     facts: Mapping[str, Any],
     expected: Mapping[str, Any],
+    *,
+    as_of: str | None = None,
 ) -> ScenarioResult:
     expected_error = expected.get("error")
     if expected_error is not None and not isinstance(expected_error, str):
         raise ValueError(f"Scenario {scenario_id!r}: expect.error must be a string")
 
     try:
-        result = evaluate(table, facts)
+        result = evaluate(table, facts, as_of=as_of)
     except Exception as exc:  # scenario runner compares deterministic engine failures
         actual = {"error": str(exc), "error_type": type(exc).__name__}
+        if as_of is not None:
+            actual["as_of"] = as_of
         if expected_error is not None and expected_error in str(exc):
             return ScenarioResult(scenario_id, True, "expected error observed", facts, expected, actual)
         if expected_error is not None:
@@ -128,6 +135,8 @@ def _run_one(
         "outputs": result.outputs,
         "matched_rules": list(result.matched_rule_ids),
     }
+    if as_of is not None:
+        actual["as_of"] = as_of
     if expected_error is not None:
         return ScenarioResult(
             scenario_id,
