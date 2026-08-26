@@ -28,7 +28,7 @@ The product goal is a practical Git-native layer for enterprise decision logic: 
 ## Interoperability
 
 - [ ] DMN 1.4 import/export subset
-- [ ] BRFplus-oriented adapter examples
+- [x] BRFplus-oriented adapter boundary and runnable SAP examples
 - [ ] generated runtime adapters for Python/JavaScript
 - [x] machine-readable semantic change report
 
