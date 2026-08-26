@@ -28,6 +28,8 @@ capabilities:
   - spreadsheet-import
   - csv-xlsx-import
   - executable-scenarios
+  - overlap-analysis
+  - first-policy-shadow-analysis
   - cli
   - json-schema
   - ci
