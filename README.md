@@ -29,6 +29,8 @@ Decision Tables as Code provides a small vendor-neutral format and deterministic
 - stable rule anchors and semantic fingerprints
 - SARIF 2.1.0 output for code-scanning systems
 - native GitHub Actions `::error` / `::warning` annotations
+- runnable SAP-oriented derivation, classification, replication-filter, and approval examples
+- documented SAP/BRFplus adapter boundary without claiming generic deployment compatibility
 - JSON Schema
 - CLI suitable for CI
 - runnable tests and GitHub Actions
@@ -164,6 +166,17 @@ dtac render examples/order-routing-v2.yaml \
 
 Reports include the rule matrix, diagnostics, stable rule anchors, and a semantic fingerprint. HTML is standalone: no server, JavaScript, CDN, or external assets are required. See [business review reports](docs/review-reports.md).
 
+## SAP / BRFplus example gallery
+
+The repository includes locally executable SAP-oriented examples for four common enterprise rule patterns:
+
+- customer/account-group and BP-role derivation
+- tax classification and missing-data review
+- replication routing plus origin-system loop prevention
+- amount/risk approval thresholds with boundary-value tests
+
+Start with the [SAP example gallery](examples/sap/README.md). The [SAP / BRFplus interoperability guide](docs/sap-brfplus.md) explains the conceptual mapping, representability checks, import/export adapter boundary, transport strategy, and explicit limitations. No SAP credentials or licensed system are needed to run the examples.
+
 ## Why this is useful in enterprise projects
 
 The same pattern appears in SAP and non-SAP work: pricing matrices, partner determination, routing rules, master-data derivations, tax classifications, interface filters, migration mappings, approval matrices, cutover rules, and exception handling. The runtime may be ABAP, BRFplus, DMN, a workflow engine, middleware, or custom code, but the review problem is the same.
@@ -174,11 +187,11 @@ This repository focuses on the portable layer before runtime deployment: import 
 
 The v1 format is intentionally small. Scalars mean equality, lists mean membership, `"*"` means any present value, and operator objects support `eq`, `ne`, `in`, `not_in`, `gt`, `gte`, `lt`, `lte`, `between`, `exists`, and `regex`.
 
-See [the v1 specification](docs/specification.md), [diagnostic reference](docs/diagnostics.md), [rule analysis](docs/rule-analysis.md), [rule governance](docs/rule-governance.md), [inspect](docs/inspect.md), [explain](docs/explain.md), [classified semantic diff](docs/semantic-diff.md), [spreadsheet importing](docs/importing-spreadsheets.md), [scenario testing](docs/scenario-testing.md), [business review reports](docs/review-reports.md), [GitHub integration](docs/github-integration.md), and [CI integration](docs/ci.md).
+See [the v1 specification](docs/specification.md), [diagnostic reference](docs/diagnostics.md), [rule analysis](docs/rule-analysis.md), [rule governance](docs/rule-governance.md), [inspect](docs/inspect.md), [explain](docs/explain.md), [classified semantic diff](docs/semantic-diff.md), [SAP / BRFplus interoperability](docs/sap-brfplus.md), [spreadsheet importing](docs/importing-spreadsheets.md), [scenario testing](docs/scenario-testing.md), [business review reports](docs/review-reports.md), [GitHub integration](docs/github-integration.md), and [CI integration](docs/ci.md).
 
 ## Near-term roadmap
 
-The next high-value layers are DMN interoperability, SAP/BRFplus-oriented examples, multi-table packages and decision dependency graphs, and stronger compatibility proofs across versions.
+The next high-value layers are DMN interoperability, multi-table packages and decision dependency graphs, generated runtime adapters, and stronger compatibility proofs across versions.
 
 See [ROADMAP.md](ROADMAP.md) for the working roadmap.
 
