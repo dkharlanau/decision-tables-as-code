@@ -33,6 +33,17 @@ jobs:
       - run: dtac coverage /tmp/imported.yaml
       - run: dtac test examples/order-routing.yaml examples/order-routing.scenarios.yaml
       - run: dtac test examples/effective-routing.yaml examples/effective-routing.scenarios.yaml
+      - name: Verify decision package execution and impact
+        run: |
+          dtac package-validate examples/package/order-approval/package.yaml
+          dtac package-eval examples/package/order-approval/package.yaml --facts '{"customer_tier":"VIP","blocked":false,"amount":500,"region":"EU"}' --output /tmp/package-result.json
+          python -c 'import json; d=json.load(open("/tmp/package-result.json")); assert d["order"] == ["risk-classification","approval-decision","fulfillment-route"] and d["terminal_outputs"] == {"fulfillment-route":{"queue":"EU_AUTO"}}'
+          dtac package-graph examples/package/order-approval/package.yaml --format json --output /tmp/package-graph.json
+          python -c 'import json; d=json.load(open("/tmp/package-graph.json")); assert len(d["nodes"]) == 3 and len(d["edges"]) == 2'
+          dtac package-graph examples/package/order-approval/package.yaml --format mermaid --output /tmp/package-graph.mmd
+          grep -q "flowchart LR" /tmp/package-graph.mmd
+          dtac package-impact examples/package/order-approval/package.yaml --changed risk-classification --output /tmp/package-impact.json
+          python -c 'import json; d=json.load(open("/tmp/package-impact.json")); assert d["downstream_impacted"] == ["approval-decision","fulfillment-route"]'
       - name: Verify DMN 1.4 UNIQUE round trip
         run: |
           dtac dmn-import examples/dmn/routing-unique.dmn --output /tmp/dmn-routing.yaml
