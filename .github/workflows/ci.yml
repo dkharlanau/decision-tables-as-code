@@ -31,5 +31,11 @@ jobs:
       - run: dtac validate /tmp/imported.yaml
       - run: dtac coverage /tmp/imported.yaml
       - run: dtac test examples/order-routing.yaml examples/order-routing.scenarios.yaml
+      - name: Validate and execute SAP examples
+        run: |
+          for name in customer-account-group-derivation tax-classification interface-replication-filter approval-matrix; do
+            dtac validate "examples/sap/${name}.yaml"
+            dtac test "examples/sap/${name}.yaml" "examples/sap/${name}.scenarios.yaml"
+          done
       - run: dtac render examples/order-routing.yaml --format html --coverage --output /tmp/order-routing.html
       - run: dtac render examples/order-routing-v2.yaml --format markdown --against examples/order-routing.yaml --output /tmp/order-routing-diff.md
