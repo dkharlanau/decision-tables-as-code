@@ -22,7 +22,7 @@ The product goal is a practical Git-native layer for enterprise decision logic: 
 - [x] scenario file format and `dtac test`
 - [ ] Markdown/HTML rendering for business review
 - [ ] SARIF or GitHub annotations for validator findings
-- [ ] richer overlap/shadow analysis for numeric and enum conditions
+- [x] richer overlap/shadow analysis for numeric and enum conditions
 - [ ] rule provenance (`source`, ticket, owner, effective dates)
 
 ## Interoperability
