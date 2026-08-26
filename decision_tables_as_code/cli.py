@@ -6,6 +6,7 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
+from .compatibility import analyze_compatibility
 from .coverage import analyze_coverage
 from .diff import semantic_diff
 from .dmn import dumps_dmn, load_dmn, table_to_document
@@ -66,6 +67,15 @@ def build_parser() -> argparse.ArgumentParser:
         default="any",
         help="Exit 1 for the selected change threshold; default preserves legacy behavior and fails on any change",
     )
+
+    compatibility_parser = sub.add_parser("compatibility", help="Exhaustively prove behavioral equivalence over declared finite domains")
+    compatibility_parser.add_argument("before")
+    compatibility_parser.add_argument("after")
+    compatibility_parser.add_argument("--as-of", help="Explicit YYYY-MM-DD date for effective-dated rules")
+    compatibility_parser.add_argument("--max-combinations", type=int, default=10_000)
+    compatibility_parser.add_argument("--max-witnesses", type=int, default=100)
+    compatibility_parser.add_argument("--fail-on-change", action="store_true", help="Exit 1 when a proven behavior change exists; exit 2 when proof is impossible")
+    compatibility_parser.add_argument("--output", help="Write versioned compatibility JSON to a file instead of stdout")
 
     coverage_parser = sub.add_parser("coverage", help="Evaluate finite input domains for gaps and ambiguity")
     coverage_parser.add_argument("table")
@@ -158,6 +168,8 @@ def main(argv: list[str] | None = None) -> int:
             return _inspect(args.table, args.output)
         if args.command == "diff":
             return _diff(args.before, args.after, args.output, args.fail_on)
+        if args.command == "compatibility":
+            return _compatibility(args.before, args.after, args.as_of, args.max_combinations, args.max_witnesses, args.fail_on_change, args.output)
         if args.command == "coverage":
             return _coverage(args.table, args.max_combinations)
         if args.command == "import":
@@ -251,6 +263,35 @@ def _diff(before_path: str, after_path: str, output_path: str | None = None, fai
         "never": False,
     }[fail_on]
     return _emit(payload, output_path, error_status=1 if should_fail else 0)
+
+
+def _compatibility(
+    before_path: str,
+    after_path: str,
+    as_of: str | None,
+    max_combinations: int,
+    max_witnesses: int,
+    fail_on_change: bool,
+    output_path: str | None,
+) -> int:
+    report = analyze_compatibility(
+        load_table(before_path),
+        load_table(after_path),
+        as_of=as_of,
+        max_combinations=max_combinations,
+        max_witnesses=max_witnesses,
+    )
+    rendered = json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False, default=str) + "\n"
+    if fail_on_change:
+        if not report["provable"]:
+            status = 2
+        elif report["changed"]:
+            status = 1
+        else:
+            status = 0
+    else:
+        status = 0
+    return _emit(rendered, output_path, error_status=status)
 
 
 def _coverage(path: str, max_combinations: int) -> int:

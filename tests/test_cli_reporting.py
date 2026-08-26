@@ -1,6 +1,10 @@
 import json
+from pathlib import Path
 
 from decision_tables_as_code.cli import main
+
+
+ROOT = Path(__file__).parents[1]
 
 
 def _write_invalid_table(path):
@@ -61,3 +65,70 @@ def test_legacy_json_flag_remains_supported(tmp_path, capsys):
 
     assert exit_code == 1
     assert payload[0]["code"] == "DT032"
+
+
+def test_compatibility_writes_versioned_report_without_failing_by_default(tmp_path):
+    output = tmp_path / "compatibility.json"
+
+    exit_code = main([
+        "compatibility",
+        str(ROOT / "examples" / "order-routing.yaml"),
+        str(ROOT / "examples" / "order-routing-v2.yaml"),
+        "--output", str(output),
+    ])
+    report = json.loads(output.read_text(encoding="utf-8"))
+
+    assert exit_code == 0
+    assert report["format_version"] == 1
+    assert report["provable"] is True
+    assert report["changed"] is True
+    assert report["changed_combinations"] == 1
+
+
+def test_compatibility_fail_on_change_returns_one_for_proven_change(tmp_path):
+    output = tmp_path / "compatibility.json"
+
+    exit_code = main([
+        "compatibility",
+        str(ROOT / "examples" / "order-routing.yaml"),
+        str(ROOT / "examples" / "order-routing-v2.yaml"),
+        "--fail-on-change",
+        "--output", str(output),
+    ])
+
+    assert exit_code == 1
+    assert json.loads(output.read_text(encoding="utf-8"))["changed"] is True
+
+
+def test_compatibility_fail_on_change_returns_two_when_proof_is_impossible(tmp_path):
+    table = tmp_path / "no-domain.yaml"
+    table.write_text(
+        """version: 1
+id: no-domain
+inputs:
+  - name: country
+    type: string
+outputs:
+  - name: route
+    type: string
+rules:
+  - id: de
+    when: {country: DE}
+    then: {route: A}
+""",
+        encoding="utf-8",
+    )
+    output = tmp_path / "compatibility.json"
+
+    exit_code = main([
+        "compatibility",
+        str(table),
+        str(table),
+        "--fail-on-change",
+        "--output", str(output),
+    ])
+    report = json.loads(output.read_text(encoding="utf-8"))
+
+    assert exit_code == 2
+    assert report["provable"] is False
+    assert report["blocking_reasons"][0]["code"] == "missing_finite_domain"

@@ -30,6 +30,26 @@ jobs:
       - run: python -c 'import json; d=json.load(open("/tmp/inspect.json")); assert d["format_version"] == 1 and d["table"]["id"] == "order-routing"'
       - run: dtac diff examples/order-routing.yaml examples/order-routing-v2.yaml --fail-on never --output /tmp/diff.json
       - run: python -c 'import json; d=json.load(open("/tmp/diff.json")); assert d["format_version"] == 1 and d["changed"] and d["classification"] in {"potentially_breaking", "breaking"}'
+      - name: Verify exhaustive behavioral compatibility witness
+        run: |
+          dtac compatibility examples/order-routing.yaml examples/order-routing-v2.yaml --output /tmp/compatibility.json
+          python - <<'PY'
+          import json
+          d = json.load(open('/tmp/compatibility.json'))
+          assert d['format_version'] == 1
+          assert d['provable'] is True and d['changed'] is True and d['changed_combinations'] == 1
+          w = d['witnesses'][0]
+          assert w['facts'] == {'country':'DE','customer_type':'B2B','order_value':5000}
+          assert w['before']['outputs']['approval'] == 'senior'
+          assert w['after']['outputs']['approval'] == 'director'
+          PY
+          set +e
+          dtac compatibility examples/order-routing.yaml examples/order-routing-v2.yaml --fail-on-change >/tmp/compatibility-gate.json
+          status=$?
+          set -e
+          test "$status" -eq 1
+          dtac compatibility examples/order-routing.yaml examples/order-routing.yaml --fail-on-change --output /tmp/compatibility-equivalent.json
+          python -c 'import json; d=json.load(open("/tmp/compatibility-equivalent.json")); assert d["provable"] and d["equivalent"] and not d["changed"]'
       - run: dtac coverage examples/order-routing.yaml
       - run: dtac import examples/order-routing.csv --config examples/order-routing.import.yaml --output /tmp/imported.yaml
       - run: dtac validate /tmp/imported.yaml
