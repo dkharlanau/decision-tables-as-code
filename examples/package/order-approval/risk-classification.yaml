@@ -1,0 +1,33 @@
+version: 1
+id: risk-classification
+name: Risk classification
+hit_policy: unique
+description: Classify a customer context into a simple risk level for downstream decisions.
+inputs:
+  - name: customer_tier
+    type: string
+    domain: [STANDARD, VIP]
+  - name: blocked
+    type: boolean
+    domain: [true, false]
+outputs:
+  - name: risk_level
+    type: string
+rules:
+  - id: blocked
+    when:
+      blocked: true
+    then:
+      risk_level: HIGH
+  - id: vip
+    when:
+      customer_tier: VIP
+      blocked: false
+    then:
+      risk_level: LOW
+  - id: standard
+    when:
+      customer_tier: STANDARD
+      blocked: false
+    then:
+      risk_level: MEDIUM
