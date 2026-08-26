@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .coverage import analyze_coverage
 from .diff import semantic_diff
+from .dmn import dumps_dmn, load_dmn, table_to_document
 from .engine import evaluate
 from .explain import explain_table
 from .importer import dump_yaml, import_spreadsheet, load_import_config
@@ -65,6 +66,16 @@ def build_parser() -> argparse.ArgumentParser:
     import_parser.add_argument("--config", required=True)
     import_parser.add_argument("--output")
 
+    dmn_import_parser = sub.add_parser("dmn-import", help="Import the supported DMN 1.4 decision-table subset")
+    dmn_import_parser.add_argument("source")
+    dmn_import_parser.add_argument("--decision", help="Decision id when the DMN document contains multiple decision tables")
+    dmn_import_parser.add_argument("--output", help="Write canonical YAML to a file instead of stdout")
+
+    dmn_export_parser = sub.add_parser("dmn-export", help="Export a representable canonical table as DMN 1.4")
+    dmn_export_parser.add_argument("table")
+    dmn_export_parser.add_argument("--model-namespace", help="DMN definitions namespace; defaults to a deterministic urn:dtac namespace")
+    dmn_export_parser.add_argument("--output", help="Write DMN XML to a file instead of stdout")
+
     test_parser = sub.add_parser("test", help="Run executable decision scenarios")
     test_parser.add_argument("table")
     test_parser.add_argument("scenarios")
@@ -98,6 +109,10 @@ def main(argv: list[str] | None = None) -> int:
             return _coverage(args.table, args.max_combinations)
         if args.command == "import":
             return _import(args.source, args.config, args.output)
+        if args.command == "dmn-import":
+            return _dmn_import(args.source, args.decision, args.output)
+        if args.command == "dmn-export":
+            return _dmn_export(args.table, args.model_namespace, args.output)
         if args.command == "test":
             return _test(args.table, args.scenarios, args.json_output)
         if args.command == "render":
@@ -212,6 +227,32 @@ def _import(source: str, config_path: str, output_path: str | None) -> int:
             print(f"{item.severity.upper():7} {item.code} {item.path}: {item.message}", file=sys.stderr)
         return 1
     rendered = dump_yaml(document)
+    if output_path:
+        Path(output_path).write_text(rendered, encoding="utf-8")
+        print(f"Wrote {output_path}")
+    else:
+        print(rendered, end="")
+    return 0
+
+
+def _dmn_import(source: str, decision_id: str | None, output_path: str | None) -> int:
+    table = load_dmn(source, decision_id=decision_id)
+    diagnostics = validate_table(table)
+    if has_errors(diagnostics):
+        for item in diagnostics:
+            print(f"{item.severity.upper():7} {item.code} {item.path}: {item.message}", file=sys.stderr)
+        return 1
+    rendered = dump_yaml(table_to_document(table))
+    if output_path:
+        Path(output_path).write_text(rendered, encoding="utf-8")
+        print(f"Wrote {output_path}")
+    else:
+        print(rendered, end="")
+    return 0
+
+
+def _dmn_export(table_path: str, model_namespace: str | None, output_path: str | None) -> int:
+    rendered = dumps_dmn(load_table(table_path), model_namespace=model_namespace)
     if output_path:
         Path(output_path).write_text(rendered, encoding="utf-8")
         print(f"Wrote {output_path}")
