@@ -2,13 +2,14 @@
 
 Decision Tables as Code is a Git-native workflow for enterprise business rules that are currently difficult to review because they live in Excel workbooks, migration files, configuration tables, or runtime-specific rule systems.
 
-The core idea is simple: keep a small canonical decision-table model in Git, then make validation, business scenarios, coverage, semantic change review, provenance, interoperability, multi-decision dataflow, portable runtimes, auditable releases, and target-system adaptation reproducible around it.
+The core idea is simple: keep a small canonical decision-table model in Git, then make validation, business scenarios, coverage, semantic change review, behavioral compatibility proof, provenance, interoperability, multi-decision dataflow, portable runtimes, auditable releases, and target-system adaptation reproducible around it.
 
 ## Start from the problem you have
 
 | Problem | Start here | Runnable example |
 | --- | --- | --- |
 | Validate an Excel decision table before deployment | [Excel decision table validation](use-cases/excel-decision-table-validation.md) | `examples/order-routing.csv` |
+| Prove exactly which business cases changed between versions | [Behavioral compatibility proofs](behavioral-compatibility.md) | `examples/order-routing.yaml` → `examples/order-routing-v2.yaml` |
 | Build one auditable release/evidence unit | [Decision release bundles](release-bundles.md) | `dtac bundle examples/order-routing.yaml ...` |
 | Run reviewed decision logic in Node.js/browser code | [Dependency-free JavaScript runtime](javascript-runtime.md) | `dtac js-export examples/order-routing.yaml` |
 | Connect several decisions and trace downstream impact | [Multi-table decision packages](decision-packages.md) | `examples/package/order-approval/package.yaml` |
@@ -35,6 +36,7 @@ Excel / DMN / YAML / JSON / exported configuration
  single-table controls         explicit package graph
  validate / scenarios          dependencies / bindings
  coverage / semantic diff      topo execution / impact
+ compatibility proof
         |                             |
         +-------------+---------------+
                       |
@@ -56,6 +58,7 @@ The repository does not require a hosted service. The CLI, scenarios, reports, g
 ## Adoption paths
 
 - Existing workbook: [import spreadsheets](importing-spreadsheets.md) → validate → scenarios → semantic diff → review report.
+- Version upgrade: semantic diff → [exhaustive compatibility proof](behavioral-compatibility.md) where finite domains are available → named scenarios for high-value cases.
 - Governed release: validate/test/diff → [build deterministic bundle](release-bundles.md) → verify checksum/fingerprint → attach/sign/promote the same artifact.
 - JavaScript deployment: validate/test the canonical table → [generate dependency-free ESM](javascript-runtime.md) → Node parity test → deploy the generated artifact.
 - Several related decisions: [decision packages](decision-packages.md) → validate dependencies → execute topologically → graph/impact/package diff.
@@ -69,6 +72,7 @@ See [architecture](architecture.md) for the product boundary and [adoption guide
 ## Reference
 
 - [CLI reference](cli-reference.md)
+- [Behavioral compatibility proofs](behavioral-compatibility.md)
 - [Auditable decision release bundles](release-bundles.md)
 - [Dependency-free JavaScript runtime](javascript-runtime.md)
 - [Multi-table decision packages](decision-packages.md)
@@ -84,4 +88,4 @@ See [architecture](architecture.md) for the product boundary and [adoption guide
 
 ## Search vocabulary
 
-This project intentionally documents the concrete terms teams use when they look for this problem: **decision tables as code**, **business rules in Git**, **decision release bundle**, **auditable business rule release**, **decision table change control**, **JavaScript decision table runtime**, **dependency-free rule engine**, **decision dependency graph**, **multi-table decision engine**, **decision impact analysis**, **Excel decision table validation**, **decision table testing**, **DMN Git workflow**, **DMN 1.4 decision table import export**, **SAP BRFplus testing**, **approval matrix testing**, **master-data derivation rules**, **interface filtering rules**, and **semantic diff for business rules**.
+This project intentionally documents the concrete terms teams use when they look for this problem: **decision tables as code**, **business rules in Git**, **business rule compatibility proof**, **decision table regression witnesses**, **behavioral diff decision table**, **decision release bundle**, **auditable business rule release**, **decision table change control**, **JavaScript decision table runtime**, **dependency-free rule engine**, **decision dependency graph**, **multi-table decision engine**, **decision impact analysis**, **Excel decision table validation**, **decision table testing**, **DMN Git workflow**, **DMN 1.4 decision table import export**, **SAP BRFplus testing**, **approval matrix testing**, **master-data derivation rules**, **interface filtering rules**, and **semantic diff for business rules**.
