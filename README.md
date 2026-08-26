@@ -13,6 +13,8 @@ Decision Tables as Code provides a small vendor-neutral format and deterministic
 - equality, membership, ranges, wildcard, existence, and regex conditions
 - structural and semantic validation
 - duplicate and exact-conflict detection
+- proven overlap detection for UNIQUE tables
+- FIRST-policy shadowed-rule detection
 - finite-domain gap and ambiguity analysis
 - deterministic evaluation
 - rule-aware semantic diff
@@ -58,6 +60,8 @@ Validate:
 ```bash
 dtac validate examples/order-routing.yaml
 ```
+
+Validation includes exact conflicts plus conservative rule-relationship analysis: `DT032` reports proven UNIQUE overlaps and `DT033` reports FIRST rules that are provably unreachable because an earlier rule fully shadows them. See [rule analysis](docs/rule-analysis.md).
 
 Evaluate a decision:
 
@@ -106,11 +110,11 @@ This repository focuses on the portable layer before runtime deployment: import 
 
 The v1 format is intentionally small. Scalars mean equality, lists mean membership, `"*"` means any present value, and operator objects support `eq`, `ne`, `in`, `not_in`, `gt`, `gte`, `lt`, `lte`, `between`, `exists`, and `regex`.
 
-See [the v1 specification](docs/specification.md), [spreadsheet importing](docs/importing-spreadsheets.md), [scenario testing](docs/scenario-testing.md), and [CI integration](docs/ci.md).
+See [the v1 specification](docs/specification.md), [rule analysis](docs/rule-analysis.md), [spreadsheet importing](docs/importing-spreadsheets.md), [scenario testing](docs/scenario-testing.md), and [CI integration](docs/ci.md).
 
 ## Near-term roadmap
 
-The next high-value layers are stronger overlap/shadow analysis, generated Markdown/HTML views, DMN interoperability, and machine-readable change reports for agents and CI.
+The next high-value layers are generated Markdown/HTML views, SARIF/GitHub annotations, provenance/effective dates, DMN interoperability, and machine-readable change reports for agents and CI.
 
 See [ROADMAP.md](ROADMAP.md) for the working roadmap.
 

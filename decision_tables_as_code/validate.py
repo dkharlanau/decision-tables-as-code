@@ -6,6 +6,7 @@ from typing import Any
 
 from .matcher import condition_matches
 from .model import DecisionTable, SUPPORTED_HIT_POLICIES, SUPPORTED_TYPES
+from .overlap import find_proven_overlaps, find_shadowed_rules
 
 
 @dataclass(frozen=True)
@@ -38,6 +39,7 @@ def validate_table(table: DecisionTable) -> list[Diagnostic]:
     diagnostics.extend(_rule_diagnostics(table))
     diagnostics.extend(_duplicate_and_conflict_diagnostics(table))
     diagnostics.extend(_condition_shape_diagnostics(table))
+    diagnostics.extend(_relationship_diagnostics(table))
     return diagnostics
 
 
@@ -101,10 +103,12 @@ def _duplicate_and_conflict_diagnostics(table: DecisionTable) -> list[Diagnostic
             other_index, other_output = by_condition[condition_key]
             other_rule = table.rules[other_index]
             if other_output == output_key:
+                severity = "error" if table.hit_policy == "unique" else "warning"
+                suffix = "; duplicate matches violate UNIQUE hit policy" if table.hit_policy == "unique" else ""
                 diagnostics.append(Diagnostic(
                     "DT030",
-                    "warning",
-                    f"Rule {rule.id!r} duplicates conditions and outputs of {other_rule.id!r}",
+                    severity,
+                    f"Rule {rule.id!r} duplicates conditions and outputs of {other_rule.id!r}{suffix}",
                     f"rules[{index}]",
                 ))
             else:
@@ -137,6 +141,28 @@ def _condition_shape_diagnostics(table: DecisionTable) -> list[Diagnostic]:
                     str(exc),
                     f"rules[{rule_index}].when.{name}",
                 ))
+    return diagnostics
+
+
+def _relationship_diagnostics(table: DecisionTable) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    if table.hit_policy == "unique":
+        for relation in find_proven_overlaps(table):
+            dimensions = ", ".join(relation.dimensions) or "declared inputs"
+            diagnostics.append(Diagnostic(
+                "DT032",
+                "error",
+                f"Rules {relation.first_rule_id!r} and {relation.second_rule_id!r} can both match; proven overlap on {dimensions}",
+                f"rules[{relation.second_index}]",
+            ))
+    if table.hit_policy == "first":
+        for relation in find_shadowed_rules(table):
+            diagnostics.append(Diagnostic(
+                "DT033",
+                "warning",
+                f"Rule {relation.second_rule_id!r} is fully shadowed by earlier rule {relation.first_rule_id!r}",
+                f"rules[{relation.second_index}]",
+            ))
     return diagnostics
 
 
