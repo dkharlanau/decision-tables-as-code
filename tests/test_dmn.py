@@ -19,7 +19,7 @@ def test_import_unique_table_preserves_rules_conditions_and_domains():
     assert table.inputs[1].type == "number"
     assert table.rules[0].id == "de-high"
     assert table.rules[0].when == {"country": "DE", "amount": {"gte": 5000}}
-    assert table.rules[1].when == {"country": "PL", "amount": {"gte": 0, "lte": 4999}}
+    assert table.rules[1].when == {"country": "DE", "amount": {"gte": 0, "lte": 4999}}
     assert table.rules[2].when == {"country": "PL"}
 
 
@@ -190,10 +190,10 @@ def _unique_dmn() -> str:
         <inputEntry id="de-high-amount"><text>&gt;= 5000</text></inputEntry>
         <outputEntry id="de-high-route"><text>"enterprise"</text></outputEntry>
       </rule>
-      <rule id="pl-range">
-        <inputEntry id="pl-range-country"><text>"PL"</text></inputEntry>
-        <inputEntry id="pl-range-amount"><text>[0..4999]</text></inputEntry>
-        <outputEntry id="pl-range-route"><text>"standard"</text></outputEntry>
+      <rule id="de-low">
+        <inputEntry id="de-low-country"><text>"DE"</text></inputEntry>
+        <inputEntry id="de-low-amount"><text>[0..4999]</text></inputEntry>
+        <outputEntry id="de-low-route"><text>"standard"</text></outputEntry>
       </rule>
       <rule id="pl-any">
         <inputEntry id="pl-any-country"><text>"PL"</text></inputEntry>
