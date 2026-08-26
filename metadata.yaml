@@ -27,6 +27,7 @@ capabilities:
   - semantic-diff
   - spreadsheet-import
   - csv-xlsx-import
+  - executable-scenarios
   - cli
   - json-schema
   - ci
