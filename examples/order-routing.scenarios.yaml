@@ -1,0 +1,55 @@
+version: 1
+table: order-routing
+scenarios:
+  - id: de-b2b-high-value
+    facts:
+      country: DE
+      customer_type: B2B
+      order_value: 6000
+    expect:
+      matched_rules: [de-b2b-high]
+      outputs:
+        route: enterprise-desk
+        approval: senior
+
+  - id: de-b2b-low-value
+    facts:
+      country: DE
+      customer_type: B2B
+      order_value: 500
+    expect:
+      matched_rules: [de-b2b-low]
+      outputs:
+        route: standard-desk
+        approval: automatic
+
+  - id: de-consumer
+    facts:
+      country: DE
+      customer_type: B2C
+      order_value: 5000
+    expect:
+      matched_rules: [de-b2c]
+      outputs:
+        route: ecommerce
+        approval: automatic
+
+  - id: pl-shared-service
+    facts:
+      country: PL
+      customer_type: B2C
+      order_value: 5000
+    expect:
+      matched_rules: [pl-all]
+      outputs:
+        route: shared-service
+        approval: automatic
+
+  - id: unsupported-country-has-no-match
+    facts:
+      country: AT
+      customer_type: B2B
+      order_value: 5000
+    expect:
+      matched_rules: []
+      outputs: null
