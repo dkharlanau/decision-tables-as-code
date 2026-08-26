@@ -13,9 +13,11 @@ metadata:
   owner: Order Operations
 tables:
   - id: risk-classification
+    version: 1
     path: risk-classification.yaml
 
   - id: approval-decision
+    version: 1
     path: approval-decision.yaml
     depends_on:
       - table: risk-classification
@@ -23,7 +25,7 @@ tables:
           risk_level: risk_level
 ```
 
-Table paths are relative to the manifest file.
+Table paths are relative to the manifest file. Each entry also records the canonical table format version. In package v1 this is `1`; keeping it explicit makes the manifest self-describing and lets schema/tooling reject a future incompatible table format rather than guessing.
 
 `bind` is always:
 
@@ -54,7 +56,7 @@ Validation checks both the package graph and every table. Package-specific check
 - incompatible upstream-output/downstream-input types;
 - binding from a `collect` table, which has no single output object to bind.
 
-Underlying `DTxxx` table diagnostics are returned with package-qualified paths. Package diagnostics use `PKxxx` codes.
+Underlying `DTxxx` table diagnostics are returned with package-qualified paths. Package diagnostics use `PKxxx` codes. The JSON Schema additionally requires each manifest entry to pin a supported table format version.
 
 Use JSON when another tool consumes the result:
 
