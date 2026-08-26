@@ -1,0 +1,41 @@
+version: 1
+id: effective-routing
+name: Effective-dated order routing
+hit_policy: unique
+inputs:
+  - name: country
+    type: string
+    domain: [DE, PL]
+outputs:
+  - name: route
+    type: string
+rules:
+  - id: de-legacy
+    owner: Order Management
+    source: EU routing workbook
+    ticket: CHG-1042
+    rationale: Legacy German routing remains active through 2026
+    effective_to: 2026-12-31
+    when:
+      country: DE
+    then:
+      route: legacy-eu
+
+  - id: de-new
+    owner: Order Management
+    source: EU routing workbook
+    ticket: CHG-1042
+    rationale: New German fulfillment model starts in 2027
+    effective_from: 2027-01-01
+    when:
+      country: DE
+    then:
+      route: eu-new
+
+  - id: pl-default
+    owner: Order Management
+    source: EU routing workbook
+    when:
+      country: PL
+    then:
+      route: eu-standard
