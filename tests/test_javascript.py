@@ -100,18 +100,36 @@ def test_generated_runtime_matches_all_condition_operators_and_collect(tmp_path:
 
     assert js["matched_rule_ids"] == list(native.matched_rule_ids)
     assert js["outputs"] == native.outputs
+    assert "Record<string, unknown>[]" in generate_typescript_declaration(table)
 
 
-def test_python_specific_regex_is_rejected_explicitly():
+@pytest.mark.parametrize("pattern", ["(?P<name>.+)", r"\w+", r"\d{3}"])
+def test_nonportable_regex_is_rejected_explicitly(pattern: str):
     table = table_from_mapping({
         "version": 1,
         "id": "regex-portability",
         "inputs": [{"name": "value", "type": "string"}],
         "outputs": [{"name": "result", "type": "string"}],
-        "rules": [{"id": "r", "when": {"value": {"regex": "(?P<name>.+)"}}, "then": {"result": "x"}}],
+        "rules": [{"id": "r", "when": {"value": {"regex": pattern}}, "then": {"result": "x"}}],
     })
-    with pytest.raises(JavaScriptGenerationError, match="Python-specific regex"):
+    with pytest.raises(JavaScriptGenerationError, match="Python-specific or Unicode-sensitive regex"):
         generate_javascript(table)
+
+
+@pytest.mark.skipif(NODE is None, reason="Node.js is required for generated-runtime parity")
+def test_regex_fullmatch_does_not_accept_trailing_newline(tmp_path: Path):
+    table = table_from_mapping({
+        "version": 1,
+        "id": "regex-fullmatch",
+        "inputs": [{"name": "value", "type": "string"}],
+        "outputs": [{"name": "result", "type": "string"}],
+        "rules": [{"id": "r", "when": {"value": {"regex": "[A-Z]+"}}, "then": {"result": "x"}}],
+    })
+    module_path = tmp_path / "regex.mjs"
+    module_path.write_text(generate_javascript(table), encoding="utf-8")
+
+    assert evaluate(table, {"value": "ABC\n"}).outputs is None
+    assert _node_evaluate(module_path, {"value": "ABC\n"}, None)["outputs"] is None
 
 
 def _node_evaluate(module_path: Path, facts: dict, as_of) -> dict:
