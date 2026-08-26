@@ -33,6 +33,8 @@ def test_use_case_gallery_points_to_runnable_examples():
         "examples/order-routing.import.yaml",
         "examples/effective-routing.yaml",
         "examples/effective-routing.scenarios.yaml",
+        "examples/dmn/routing-unique.dmn",
+        "examples/dmn/approval-first.dmn",
         "examples/sap/approval-matrix.yaml",
         "examples/sap/approval-matrix.scenarios.yaml",
         "examples/sap/customer-account-group-derivation.yaml",
