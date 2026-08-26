@@ -18,6 +18,7 @@ from .validate import has_errors, validate_table
 
 
 BUNDLE_FORMAT_VERSION = 1
+_RESERVED_PATHS = {"manifest.json", "SHA256SUMS"}
 
 
 def create_release_bundle(
@@ -166,7 +167,7 @@ def create_release_bundle(
 
         checksum_records = [
             *file_records,
-            _file_record(root, "manifest.json"),
+            _file_record(root, "manifest.json", allow_reserved=True),
         ]
         checksum_text = "".join(
             f'{item["sha256"]}  {item["path"]}\n'
@@ -182,6 +183,10 @@ def create_release_bundle(
 def verify_release_bundle(bundle_dir: str | Path) -> dict[str, Any]:
     """Verify declared files, checksums, semantic fingerprint, and unexpected files."""
     root = Path(bundle_dir)
+    if not root.is_dir() or root.is_symlink():
+        raise ValueError("Release bundle must be a real directory")
+    _reject_symlinks(root)
+
     manifest_path = root / "manifest.json"
     sums_path = root / "SHA256SUMS"
     if not manifest_path.is_file() or not sums_path.is_file():
@@ -205,6 +210,8 @@ def verify_release_bundle(bundle_dir: str | Path) -> dict[str, Any]:
         expected_hash = raw.get("sha256")
         expected_bytes = raw.get("bytes")
         _validate_relative_bundle_path(relative)
+        if relative in _RESERVED_PATHS:
+            raise ValueError(f"manifest.files cannot declare reserved path {relative!r}")
         if not isinstance(expected_hash, str) or len(expected_hash) != 64:
             raise ValueError(f"manifest.files[{index}].sha256 is invalid")
         if not isinstance(expected_bytes, int) or expected_bytes < 0:
@@ -218,11 +225,13 @@ def verify_release_bundle(bundle_dir: str | Path) -> dict[str, Any]:
         if actual["bytes"] != expected_bytes:
             raise ValueError(f"Size mismatch for {relative}")
 
-    actual_artifacts = {
-        path.relative_to(root).as_posix()
-        for path in root.rglob("*")
-        if path.is_file() and path.name not in {"manifest.json", "SHA256SUMS"}
-    }
+    actual_artifacts = set()
+    for path in root.rglob("*"):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(root).as_posix()
+        if relative not in _RESERVED_PATHS:
+            actual_artifacts.add(relative)
     if actual_artifacts != expected_artifacts:
         missing = sorted(expected_artifacts - actual_artifacts)
         extra = sorted(actual_artifacts - expected_artifacts)
@@ -259,16 +268,24 @@ def verify_release_bundle(bundle_dir: str | Path) -> dict[str, Any]:
 
 
 def _artifact_records(root: Path) -> list[dict[str, Any]]:
-    return [
-        _file_record(root, path.relative_to(root).as_posix())
-        for path in sorted(root.rglob("*"))
-        if path.is_file() and path.name not in {"manifest.json", "SHA256SUMS"}
-    ]
+    records: list[dict[str, Any]] = []
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(root).as_posix()
+        if relative in _RESERVED_PATHS:
+            continue
+        records.append(_file_record(root, relative))
+    return records
 
 
-def _file_record(root: Path, relative: str) -> dict[str, Any]:
+def _file_record(root: Path, relative: str, *, allow_reserved: bool = False) -> dict[str, Any]:
     _validate_relative_bundle_path(relative)
+    if relative in _RESERVED_PATHS and not allow_reserved:
+        raise ValueError(f"Reserved bundle path cannot be an artifact: {relative}")
     path = root / relative
+    if path.is_symlink():
+        raise ValueError(f"Bundle file must not be a symlink: {relative}")
     if not path.is_file():
         raise ValueError(f"Bundle file is missing: {relative}")
     return {
@@ -279,6 +296,8 @@ def _file_record(root: Path, relative: str) -> dict[str, Any]:
 
 
 def _sha256_file(path: Path) -> str:
+    if path.is_symlink():
+        raise ValueError(f"Bundle checksum target must not be a symlink: {path.name}")
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
@@ -313,12 +332,23 @@ def _parse_checksum_file(content: str) -> dict[str, str]:
             raise ValueError(f"Invalid SHA256SUMS line {line_number}")
         digest, relative = line.split("  ", 1)
         _validate_relative_bundle_path(relative)
+        if relative == "SHA256SUMS":
+            raise ValueError("SHA256SUMS must not contain a checksum for itself")
         if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
             raise ValueError(f"Invalid SHA256SUMS digest on line {line_number}")
         if relative in result:
             raise ValueError(f"Duplicate SHA256SUMS path {relative!r}")
         result[relative] = digest
     return result
+
+
+def _reject_symlinks(root: Path) -> None:
+    for path in root.rglob("*"):
+        if path.is_symlink():
+            raise ValueError(
+                "Release bundle must not contain symlinks: "
+                + path.relative_to(root).as_posix()
+            )
 
 
 def _validate_relative_bundle_path(value: Any) -> None:
