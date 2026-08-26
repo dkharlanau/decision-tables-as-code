@@ -1,6 +1,6 @@
 # Decision Tables as Code
 
-Git-native validation, testing, governance, semantic diff, dependency graphs, review, and strict DMN interoperability for enterprise decision tables stored in spreadsheets or structured files.
+Git-native validation, testing, governance, semantic diff, dependency graphs, portable runtimes, review, and strict DMN interoperability for enterprise decision tables stored in spreadsheets or structured files.
 
 Business rules often live in Excel, migration workbooks, configuration tables, middleware filters, DMN files, or runtime-specific rule editors. They are easy to change and difficult to review: conflicts hide between rows, boundary cases are tested manually, provenance disappears, related decisions drift apart, and a pull request cannot explain what business behavior or downstream decision may change.
 
@@ -11,6 +11,7 @@ Decision Tables as Code (`dtac`) provides a small vendor-neutral model and deter
 | Problem | Guide | Runnable example |
 | --- | --- | --- |
 | Validate an Excel rule workbook | [Excel decision table validation](docs/use-cases/excel-decision-table-validation.md) | `examples/order-routing.csv` |
+| Run reviewed rule logic in Node.js or browser code | [JavaScript runtime](docs/javascript-runtime.md) | `dtac js-export examples/order-routing.yaml` |
 | Connect multiple decisions and trace downstream impact | [Decision packages](docs/decision-packages.md) | `examples/package/order-approval/package.yaml` |
 | Import/export an ordinary DMN 1.4 decision table | [DMN 1.4 subset](docs/dmn.md) | `examples/dmn/routing-unique.dmn` |
 | Test approval/release thresholds | [Approval matrix](docs/use-cases/approval-matrix.md) | `examples/sap/approval-matrix.yaml` |
@@ -36,6 +37,7 @@ See the [documentation home](docs/index.md), [architecture](docs/architecture.md
 - executable scenario packs, including explicit `as_of` cutover cases
 - classified semantic diff: `breaking`, `potentially_breaking`, `non_breaking`, `governance_only`
 - machine-readable `dtac inspect` and rule-level `dtac explain`
+- dependency-free JavaScript ESM generation with optional TypeScript declarations and Node parity tests
 - multi-table decision packages with explicit dependencies and output-to-input bindings
 - package validation, cycle detection, deterministic topological execution, terminal outputs, and type-safe bindings
 - dependency graph output in JSON, Graphviz DOT, and Mermaid
@@ -97,6 +99,30 @@ dtac render examples/order-routing-v2.yaml \
   --format html \
   --output order-routing-change.html
 ```
+
+## Compile a table to JavaScript
+
+Generate a standalone ESM module and optional TypeScript declaration from the same reviewed table:
+
+```bash
+dtac js-export examples/order-routing.yaml \
+  --output generated/order-routing.mjs \
+  --types-output generated/order-routing.d.ts
+```
+
+Use it without installing DTAC in the target JavaScript application:
+
+```js
+import { evaluate } from "./generated/order-routing.mjs";
+
+const result = evaluate({
+  country: "DE",
+  customer_type: "B2B",
+  order_value: 6000,
+});
+```
+
+The generated result contract matches native DTAC: `table_id`, `matched_rule_ids`, and `outputs`. UNIQUE/FIRST/COLLECT, priorities, effective dates, wildcard presence and the supported condition operators are preserved. Effective-dated tables require explicit `asOf`; the generated runtime does not read today's date. CI executes the generated module with Node and compares it against native scenario results. See [dependency-free JavaScript runtime](docs/javascript-runtime.md).
 
 ## Multi-table decision systems
 
@@ -192,16 +218,17 @@ The [SAP / BRFplus interoperability guide](docs/sap-brfplus.md) defines the conc
 DTAC governs the portable layer before runtime deployment:
 
 ```text
-source -> canonical decision tables -> single-table checks / package graph -> review -> target adapter
+source -> canonical decision tables -> validate/test/diff/package graph -> review -> generated runtime or target adapter
 ```
 
-The target runtime may be BRFplus, DMN, ABAP, workflow, middleware, or custom code. DTAC does not claim those systems have identical semantics. A target adapter must explicitly prove that the table's types, operators, hit policy, provenance, effective-date behavior, and package dataflow are representable.
+The target runtime may be generated JavaScript, BRFplus, DMN, ABAP, workflow, middleware, or custom code. DTAC does not claim unrelated runtimes have identical semantics. A target adapter must explicitly prove that the table's types, operators, hit policy, provenance, effective-date behavior, and package dataflow are representable.
 
 See [architecture](docs/architecture.md) and the [staged adoption guide](docs/adoption-guide.md).
 
 ## Reference
 
 - [CLI reference](docs/cli-reference.md) — generated from the actual parser and checked in CI
+- [dependency-free JavaScript runtime](docs/javascript-runtime.md)
 - [multi-table decision packages](docs/decision-packages.md)
 - [DMN 1.4 interoperability subset](docs/dmn.md)
 - [v1 specification](docs/specification.md)
@@ -225,6 +252,6 @@ See [architecture](docs/architecture.md) and the [staged adoption guide](docs/ad
 
 ## Roadmap and status
 
-Working MVP. The model and CLI are usable, but v1 is still pre-stable. Generated runtime adapters, organization policy packs, release bundles, and stronger compatibility proofs remain roadmap work.
+Working MVP. The model and CLI are usable, but v1 is still pre-stable. Organization policy packs, signed decision release bundles, and stronger compatibility proofs remain roadmap work.
 
 See [ROADMAP.md](ROADMAP.md).
