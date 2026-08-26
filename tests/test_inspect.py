@@ -39,5 +39,5 @@ def test_inspect_exposes_contract_rules_operators_and_diagnostics():
     assert result["rules"]["count"] == 2
     assert result["rules"]["with_governance"] == 1
     assert result["rules"]["effective_dated"] == 1
-    assert result["rules"]["operators"] == ["gte", "in", "present"]
+    assert result["rules"]["operators"] == ["eq", "gte", "in", "present"]
     assert result["diagnostics"]["count"] == 0
