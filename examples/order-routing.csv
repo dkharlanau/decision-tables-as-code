@@ -1,0 +1,5 @@
+Rule ID,Priority,Country,Customer Type,Order Value,Route,Approval
+DE-B2B-HIGH,10,DE,B2B,>=5000,enterprise-desk,senior
+DE-B2B-LOW,20,DE,B2B,<5000,standard-desk,automatic
+DE-B2C,30,DE,B2C,,ecommerce,automatic
+PL-ALL,40,PL,,,shared-service,automatic
