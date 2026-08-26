@@ -6,7 +6,8 @@ from math import prod
 from typing import Any, Mapping
 
 from .engine import evaluate
-from .model import DecisionTable, InputDefinition
+from .model import DecisionTable
+from .validate import validate_table
 
 
 REPORT_FORMAT_VERSION = 1
@@ -119,6 +120,16 @@ def _proof_blockers(
     as_of: str | date | datetime | None,
 ) -> list[dict[str, str]]:
     blockers: list[dict[str, str]] = []
+
+    for side, table in (("before", before), ("after", after)):
+        errors = [item for item in validate_table(table) if item.severity == "error"]
+        if errors:
+            rendered = "; ".join(f"{item.code} {item.path}: {item.message}" for item in errors)
+            blockers.append({
+                "code": f"invalid_{side}_table",
+                "message": f"{side.capitalize()} table has validation errors: {rendered}",
+            })
+
     before_by_name = {item.name: item for item in before.inputs}
     after_by_name = {item.name: item for item in after.inputs}
     before_names = set(before_by_name)
