@@ -44,6 +44,21 @@ jobs:
           grep -q "flowchart LR" /tmp/package-graph.mmd
           dtac package-impact examples/package/order-approval/package.yaml --changed risk-classification --output /tmp/package-impact.json
           python -c 'import json; d=json.load(open("/tmp/package-impact.json")); assert d["downstream_impacted"] == ["approval-decision","fulfillment-route"]'
+      - name: Verify package semantic diff reports transitive impact
+        run: |
+          cp -R examples/package/order-approval /tmp/order-approval-candidate
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+          path = Path('/tmp/order-approval-candidate/risk-classification.yaml')
+          data = yaml.safe_load(path.read_text())
+          for rule in data['rules']:
+              if rule['id'] == 'vip':
+                  rule['then']['risk_level'] = 'MEDIUM'
+          path.write_text(yaml.safe_dump(data, sort_keys=False), encoding='utf-8')
+          PY
+          dtac package-diff examples/package/order-approval/package.yaml /tmp/order-approval-candidate/package.yaml --fail-on never --output /tmp/package-diff.json
+          python -c 'import json; d=json.load(open("/tmp/package-diff.json")); assert d["semantic_changed_tables"] == ["risk-classification"] and d["downstream_impacted"] == ["approval-decision","fulfillment-route"] and d["all_affected"] == ["risk-classification","approval-decision","fulfillment-route"]'
       - name: Verify DMN 1.4 UNIQUE round trip
         run: |
           dtac dmn-import examples/dmn/routing-unique.dmn --output /tmp/dmn-routing.yaml
