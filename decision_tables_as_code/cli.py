@@ -91,16 +91,16 @@ def build_parser() -> argparse.ArgumentParser:
     js_export_parser.add_argument("--output", help="Write JavaScript ESM to a file instead of stdout")
     js_export_parser.add_argument("--types-output", help="Also write a TypeScript declaration file")
 
-    release_build_parser = sub.add_parser("release-build", help="Build a deterministic decision release bundle")
-    release_build_parser.add_argument("table")
-    release_build_parser.add_argument("--bundle", required=True, help="Output directory; must not already exist")
-    release_build_parser.add_argument("--scenarios", help="Scenario pack to preserve and execute as release evidence")
-    release_build_parser.add_argument("--against", help="Approved/baseline table for semantic change evidence")
-    release_build_parser.add_argument("--javascript", action="store_true", help="Include generated JavaScript ESM and TypeScript declaration")
+    bundle_parser = sub.add_parser("bundle", help="Build a deterministic decision release bundle")
+    bundle_parser.add_argument("table")
+    bundle_parser.add_argument("--output", required=True, help="Output directory; must not already exist")
+    bundle_parser.add_argument("--scenarios", help="Scenario pack to preserve and execute as release evidence")
+    bundle_parser.add_argument("--against", help="Approved/baseline table for semantic change evidence")
+    bundle_parser.add_argument("--javascript", action="store_true", help="Include generated JavaScript ESM and TypeScript declaration")
 
-    release_verify_parser = sub.add_parser("release-verify", help="Verify release bundle checksums and semantic fingerprint")
-    release_verify_parser.add_argument("bundle")
-    release_verify_parser.add_argument("--output", help="Write verification JSON to a file instead of stdout")
+    bundle_verify_parser = sub.add_parser("bundle-verify", help="Verify release bundle checksums and semantic fingerprint")
+    bundle_verify_parser.add_argument("bundle")
+    bundle_verify_parser.add_argument("--output", help="Write verification JSON to a file instead of stdout")
 
     package_validate_parser = sub.add_parser("package-validate", help="Validate a multi-table decision package")
     package_validate_parser.add_argument("manifest")
@@ -168,10 +168,10 @@ def main(argv: list[str] | None = None) -> int:
             return _dmn_export(args.table, args.model_namespace, args.output)
         if args.command == "js-export":
             return _js_export(args.table, args.output, args.types_output)
-        if args.command == "release-build":
-            return _release_build(args.table, args.bundle, args.scenarios, args.against, args.javascript)
-        if args.command == "release-verify":
-            return _release_verify(args.bundle, args.output)
+        if args.command == "bundle":
+            return _bundle(args.table, args.output, args.scenarios, args.against, args.javascript)
+        if args.command == "bundle-verify":
+            return _bundle_verify(args.bundle, args.output)
         if args.command == "package-validate":
             return _package_validate(args.manifest, args.output_format, args.output)
         if args.command == "package-eval":
@@ -300,23 +300,23 @@ def _js_export(table_path: str, output_path: str | None, types_output_path: str 
     return _emit(rendered, output_path)
 
 
-def _release_build(
+def _bundle(
     table_path: str,
-    bundle_dir: str,
+    output_dir: str,
     scenarios_path: str | None,
     against_path: str | None,
     include_javascript: bool,
 ) -> int:
     manifest = create_release_bundle(
         table_path,
-        bundle_dir,
+        output_dir,
         scenarios_path=scenarios_path,
         against_path=against_path,
         include_javascript=include_javascript,
     )
     print(json.dumps({
         "ok": True,
-        "bundle": str(bundle_dir),
+        "bundle": str(output_dir),
         "table_id": manifest["table"]["id"],
         "semantic_fingerprint": manifest["table"]["semantic_fingerprint"],
         "files": len(manifest["files"]),
@@ -324,7 +324,7 @@ def _release_build(
     return 0
 
 
-def _release_verify(bundle_dir: str, output_path: str | None) -> int:
+def _bundle_verify(bundle_dir: str, output_path: str | None) -> int:
     payload = json.dumps(verify_release_bundle(bundle_dir), indent=2, sort_keys=True) + "\n"
     return _emit(payload, output_path)
 
