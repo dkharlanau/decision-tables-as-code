@@ -15,6 +15,14 @@ from .importer import dump_yaml, import_spreadsheet, load_import_config
 from .inspect import inspect_table
 from .io import load_table
 from .model import table_from_mapping
+from .package import (
+    diff_packages,
+    evaluate_package,
+    impact_analysis,
+    load_package,
+    render_package_graph,
+    validate_package,
+)
 from .render import render_html, render_markdown
 from .reporting import diagnostics_to_github_annotations, sarif_json
 from .scenarios import load_scenarios, run_scenarios
@@ -76,6 +84,33 @@ def build_parser() -> argparse.ArgumentParser:
     dmn_export_parser.add_argument("--model-namespace", help="DMN definitions namespace; defaults to a deterministic urn:dtac namespace")
     dmn_export_parser.add_argument("--output", help="Write DMN XML to a file instead of stdout")
 
+    package_validate_parser = sub.add_parser("package-validate", help="Validate a multi-table decision package")
+    package_validate_parser.add_argument("manifest")
+    package_validate_parser.add_argument("--format", choices=("text", "json"), default="text", dest="output_format")
+    package_validate_parser.add_argument("--output", help="Write validation output to a file instead of stdout")
+
+    package_eval_parser = sub.add_parser("package-eval", help="Evaluate a decision package in dependency order")
+    package_eval_parser.add_argument("manifest")
+    package_eval_parser.add_argument("--facts", required=True, help="JSON object or @path/to/facts.json")
+    package_eval_parser.add_argument("--as-of", help="Explicit YYYY-MM-DD date passed to effective-dated tables")
+    package_eval_parser.add_argument("--output", help="Write package result JSON to a file instead of stdout")
+
+    package_graph_parser = sub.add_parser("package-graph", help="Render the decision dependency graph")
+    package_graph_parser.add_argument("manifest")
+    package_graph_parser.add_argument("--format", choices=("json", "dot", "mermaid"), default="json", dest="output_format")
+    package_graph_parser.add_argument("--output", help="Write graph output to a file instead of stdout")
+
+    package_impact_parser = sub.add_parser("package-impact", help="List downstream decisions impacted by changed tables")
+    package_impact_parser.add_argument("manifest")
+    package_impact_parser.add_argument("--changed", action="append", required=True, help="Changed table id; repeat for multiple tables")
+    package_impact_parser.add_argument("--output", help="Write impact JSON to a file instead of stdout")
+
+    package_diff_parser = sub.add_parser("package-diff", help="Compare package tables/dependencies and report downstream impact")
+    package_diff_parser.add_argument("before")
+    package_diff_parser.add_argument("after")
+    package_diff_parser.add_argument("--output", help="Write package diff JSON to a file instead of stdout")
+    package_diff_parser.add_argument("--fail-on", choices=("any", "never"), default="any")
+
     test_parser = sub.add_parser("test", help="Run executable decision scenarios")
     test_parser.add_argument("table")
     test_parser.add_argument("scenarios")
@@ -113,6 +148,16 @@ def main(argv: list[str] | None = None) -> int:
             return _dmn_import(args.source, args.decision, args.output)
         if args.command == "dmn-export":
             return _dmn_export(args.table, args.model_namespace, args.output)
+        if args.command == "package-validate":
+            return _package_validate(args.manifest, args.output_format, args.output)
+        if args.command == "package-eval":
+            return _package_eval(args.manifest, args.facts, args.as_of, args.output)
+        if args.command == "package-graph":
+            return _package_graph(args.manifest, args.output_format, args.output)
+        if args.command == "package-impact":
+            return _package_impact(args.manifest, args.changed, args.output)
+        if args.command == "package-diff":
+            return _package_diff(args.before, args.after, args.output, args.fail_on)
         if args.command == "test":
             return _test(args.table, args.scenarios, args.json_output)
         if args.command == "render":
@@ -146,12 +191,7 @@ def _validate(path: str, output_format: str, output_path: str | None, legacy_jso
             for item in diagnostics
         )
 
-    if output_path:
-        Path(output_path).write_text(rendered, encoding="utf-8")
-        print(f"Wrote {output_path}")
-    else:
-        print(rendered, end="")
-    return 1 if has_errors(diagnostics) else 0
+    return _emit(rendered, output_path, error_status=1 if has_errors(diagnostics) else 0)
 
 
 def _eval(path: str, raw_facts: str, as_of: str | None = None) -> int:
@@ -169,40 +209,24 @@ def _explain(path: str, raw_facts: str, as_of: str | None, output_path: str | No
     if not isinstance(facts, dict):
         raise ValueError("--facts must resolve to a JSON object")
     payload = json.dumps(explain_table(load_table(path), facts, as_of=as_of), indent=2, default=str) + "\n"
-    if output_path:
-        Path(output_path).write_text(payload, encoding="utf-8")
-        print(f"Wrote {output_path}")
-    else:
-        print(payload, end="")
-    return 0
+    return _emit(payload, output_path)
 
 
 def _inspect(path: str, output_path: str | None = None) -> int:
     payload = json.dumps(inspect_table(load_table(path)), indent=2, default=str) + "\n"
-    if output_path:
-        Path(output_path).write_text(payload, encoding="utf-8")
-        print(f"Wrote {output_path}")
-    else:
-        print(payload, end="")
-    return 0
+    return _emit(payload, output_path)
 
 
 def _diff(before_path: str, after_path: str, output_path: str | None = None, fail_on: str = "any") -> int:
     result = semantic_diff(load_table(before_path), load_table(after_path))
     payload = json.dumps(result.to_dict(), indent=2, default=str) + "\n"
-    if output_path:
-        Path(output_path).write_text(payload, encoding="utf-8")
-        print(f"Wrote {output_path}")
-    else:
-        print(payload, end="")
-
     should_fail = {
         "any": result.changed,
         "potentially-breaking": result.classification in {"potentially_breaking", "breaking"},
         "breaking": result.classification == "breaking",
         "never": False,
     }[fail_on]
-    return 1 if should_fail else 0
+    return _emit(payload, output_path, error_status=1 if should_fail else 0)
 
 
 def _coverage(path: str, max_combinations: int) -> int:
@@ -226,13 +250,7 @@ def _import(source: str, config_path: str, output_path: str | None) -> int:
         for item in diagnostics:
             print(f"{item.severity.upper():7} {item.code} {item.path}: {item.message}", file=sys.stderr)
         return 1
-    rendered = dump_yaml(document)
-    if output_path:
-        Path(output_path).write_text(rendered, encoding="utf-8")
-        print(f"Wrote {output_path}")
-    else:
-        print(rendered, end="")
-    return 0
+    return _emit(dump_yaml(document), output_path)
 
 
 def _dmn_import(source: str, decision_id: str | None, output_path: str | None) -> int:
@@ -242,23 +260,52 @@ def _dmn_import(source: str, decision_id: str | None, output_path: str | None) -
         for item in diagnostics:
             print(f"{item.severity.upper():7} {item.code} {item.path}: {item.message}", file=sys.stderr)
         return 1
-    rendered = dump_yaml(table_to_document(table))
-    if output_path:
-        Path(output_path).write_text(rendered, encoding="utf-8")
-        print(f"Wrote {output_path}")
-    else:
-        print(rendered, end="")
-    return 0
+    return _emit(dump_yaml(table_to_document(table)), output_path)
 
 
 def _dmn_export(table_path: str, model_namespace: str | None, output_path: str | None) -> int:
-    rendered = dumps_dmn(load_table(table_path), model_namespace=model_namespace)
-    if output_path:
-        Path(output_path).write_text(rendered, encoding="utf-8")
-        print(f"Wrote {output_path}")
+    return _emit(dumps_dmn(load_table(table_path), model_namespace=model_namespace), output_path)
+
+
+def _package_validate(manifest_path: str, output_format: str, output_path: str | None) -> int:
+    package = load_package(manifest_path)
+    diagnostics = validate_package(package)
+    if output_format == "json":
+        rendered = json.dumps([item.to_dict() for item in diagnostics], indent=2) + "\n"
+    elif not diagnostics:
+        rendered = f"OK {package.id}: no package validation findings\n"
     else:
-        print(rendered, end="")
-    return 0
+        rendered = "".join(
+            f"{item.severity.upper():7} {item.code} {item.path}: {item.message}\n"
+            for item in diagnostics
+        )
+    return _emit(rendered, output_path, error_status=1 if has_errors(diagnostics) else 0)
+
+
+def _package_eval(manifest_path: str, raw_facts: str, as_of: str | None, output_path: str | None) -> int:
+    facts = _read_json_arg(raw_facts)
+    if not isinstance(facts, dict):
+        raise ValueError("--facts must resolve to a JSON object")
+    result = evaluate_package(load_package(manifest_path), facts, as_of=as_of)
+    payload = json.dumps(result.to_dict(), indent=2, default=str) + "\n"
+    return _emit(payload, output_path)
+
+
+def _package_graph(manifest_path: str, output_format: str, output_path: str | None) -> int:
+    rendered = render_package_graph(load_package(manifest_path), output_format)
+    return _emit(rendered, output_path)
+
+
+def _package_impact(manifest_path: str, changed: list[str], output_path: str | None) -> int:
+    payload = json.dumps(impact_analysis(load_package(manifest_path), changed), indent=2, default=str) + "\n"
+    return _emit(payload, output_path)
+
+
+def _package_diff(before_path: str, after_path: str, output_path: str | None, fail_on: str) -> int:
+    payload = diff_packages(load_package(before_path), load_package(after_path))
+    rendered = json.dumps(payload, indent=2, default=str) + "\n"
+    should_fail = payload["changed"] and fail_on == "any"
+    return _emit(rendered, output_path, error_status=1 if should_fail else 0)
 
 
 def _test(table_path: str, scenario_path: str, json_output: bool) -> int:
@@ -282,12 +329,16 @@ def _render(table_path: str, output_format: str, output_path: str | None, includ
         rendered = render_html(table, diagnostics, coverage=coverage, diff=diff)
     else:
         rendered = render_markdown(table, diagnostics, coverage=coverage, diff=diff)
+    return _emit(rendered, output_path)
+
+
+def _emit(content: str, output_path: str | None, *, error_status: int = 0) -> int:
     if output_path:
-        Path(output_path).write_text(rendered, encoding="utf-8")
+        Path(output_path).write_text(content, encoding="utf-8")
         print(f"Wrote {output_path}")
     else:
-        print(rendered, end="")
-    return 0
+        print(content, end="")
+    return error_status
 
 
 def _read_json_arg(value: str):
