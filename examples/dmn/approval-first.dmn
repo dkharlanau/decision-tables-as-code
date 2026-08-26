@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20211108/MODEL/"
+             id="definitions-approval"
+             name="Approval model"
+             namespace="urn:dtac:example:approval">
+  <decision id="dmn-approval" name="DMN approval">
+    <description>Portable FIRST-policy approval example where rule order is executable behavior.</description>
+    <decisionTable id="approval-table" hitPolicy="FIRST">
+      <input id="input-amount" label="Amount">
+        <inputExpression id="expression-amount" typeRef="number">
+          <text>amount</text>
+        </inputExpression>
+      </input>
+      <output id="output-strategy" name="strategy" typeRef="string"/>
+
+      <rule id="large">
+        <inputEntry id="large-amount"><text>&gt;= 10000</text></inputEntry>
+        <outputEntry id="large-strategy"><text>"L3"</text></outputEntry>
+      </rule>
+      <rule id="medium">
+        <inputEntry id="medium-amount"><text>&gt;= 1000</text></inputEntry>
+        <outputEntry id="medium-strategy"><text>"L2"</text></outputEntry>
+      </rule>
+      <rule id="fallback">
+        <inputEntry id="fallback-amount"><text>-</text></inputEntry>
+        <outputEntry id="fallback-strategy"><text>"L1"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>
