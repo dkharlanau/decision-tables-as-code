@@ -18,6 +18,7 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e '.[dev]'
       - run: pytest
+      - run: python scripts/generate_cli_reference.py --check
       - run: dtac validate examples/order-routing.yaml
       - run: dtac validate examples/order-routing.yaml --format github
       - run: dtac validate examples/order-routing.yaml --format sarif --output /tmp/dtac.sarif
