@@ -39,8 +39,10 @@ The product goal is a practical Git-native layer for enterprise decision logic: 
 
 ## Scale and governance
 
-- [ ] multi-table packages and dependencies
-- [ ] decision dependency graph
+- [x] multi-table packages with explicit dependencies and output bindings
+- [x] decision dependency graph with JSON/DOT/Mermaid output
+- [x] deterministic topological package execution
+- [x] transitive impact analysis and package semantic/dependency diff
 - [ ] policy packs for organization-specific checks
 - [ ] approval metadata and signed release bundles
 - [ ] deeper backward-compatibility proofs between table versions
