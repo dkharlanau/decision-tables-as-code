@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20211108/MODEL/"
+             id="definitions-routing"
+             name="Routing model"
+             namespace="urn:dtac:example:routing">
+  <decision id="dmn-routing" name="DMN routing">
+    <description>Portable UNIQUE routing example for DTAC DMN round-trip tests.</description>
+    <decisionTable id="routing-table" hitPolicy="UNIQUE">
+      <input id="input-country" label="Country">
+        <inputExpression id="expression-country" typeRef="string">
+          <text>country</text>
+        </inputExpression>
+        <inputValues id="values-country">
+          <text>"DE", "PL"</text>
+        </inputValues>
+      </input>
+      <input id="input-amount" label="Amount">
+        <inputExpression id="expression-amount" typeRef="number">
+          <text>amount</text>
+        </inputExpression>
+      </input>
+      <output id="output-route" name="route" typeRef="string"/>
+
+      <rule id="de-high">
+        <inputEntry id="de-high-country"><text>"DE"</text></inputEntry>
+        <inputEntry id="de-high-amount"><text>&gt;= 5000</text></inputEntry>
+        <outputEntry id="de-high-route"><text>"enterprise"</text></outputEntry>
+      </rule>
+      <rule id="de-low">
+        <inputEntry id="de-low-country"><text>"DE"</text></inputEntry>
+        <inputEntry id="de-low-amount"><text>[0..4999]</text></inputEntry>
+        <outputEntry id="de-low-route"><text>"standard"</text></outputEntry>
+      </rule>
+      <rule id="pl-all">
+        <inputEntry id="pl-all-country"><text>"PL"</text></inputEntry>
+        <inputEntry id="pl-all-amount"><text>-</text></inputEntry>
+        <outputEntry id="pl-all-route"><text>"standard"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

@@ -33,6 +33,22 @@ jobs:
       - run: dtac coverage /tmp/imported.yaml
       - run: dtac test examples/order-routing.yaml examples/order-routing.scenarios.yaml
       - run: dtac test examples/effective-routing.yaml examples/effective-routing.scenarios.yaml
+      - name: Verify DMN 1.4 UNIQUE round trip
+        run: |
+          dtac dmn-import examples/dmn/routing-unique.dmn --output /tmp/dmn-routing.yaml
+          dtac validate /tmp/dmn-routing.yaml
+          dtac dmn-export /tmp/dmn-routing.yaml --output /tmp/dmn-routing-roundtrip.dmn
+          dtac dmn-import /tmp/dmn-routing-roundtrip.dmn --output /tmp/dmn-routing-roundtrip.yaml
+          dtac diff /tmp/dmn-routing.yaml /tmp/dmn-routing-roundtrip.yaml
+      - name: Verify DMN 1.4 FIRST round trip
+        run: |
+          dtac dmn-import examples/dmn/approval-first.dmn --output /tmp/dmn-first.yaml
+          dtac validate /tmp/dmn-first.yaml
+          dtac dmn-export /tmp/dmn-first.yaml --output /tmp/dmn-first-roundtrip.dmn
+          dtac dmn-import /tmp/dmn-first-roundtrip.dmn --output /tmp/dmn-first-roundtrip.yaml
+          dtac diff /tmp/dmn-first.yaml /tmp/dmn-first-roundtrip.yaml
+          dtac eval /tmp/dmn-first-roundtrip.yaml --facts '{"amount":15000}' > /tmp/dmn-first-result.json
+          python -c 'import json; d=json.load(open("/tmp/dmn-first-result.json")); assert d["matched_rule_ids"] == ["large"] and d["outputs"] == {"strategy":"L3"}'
       - name: Validate and execute SAP examples
         run: |
           for name in customer-account-group-derivation tax-classification interface-replication-filter approval-matrix; do
