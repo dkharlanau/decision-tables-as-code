@@ -1,8 +1,8 @@
 # Decision Tables as Code
 
-Git-native validation, testing, governance, semantic diff, review, and strict DMN interoperability for enterprise decision tables stored in spreadsheets or structured files.
+Git-native validation, testing, governance, semantic diff, dependency graphs, review, and strict DMN interoperability for enterprise decision tables stored in spreadsheets or structured files.
 
-Business rules often live in Excel, migration workbooks, configuration tables, middleware filters, DMN files, or runtime-specific rule editors. They are easy to change and difficult to review: conflicts hide between rows, boundary cases are tested manually, provenance disappears, and a pull request cannot explain what business behavior actually changed.
+Business rules often live in Excel, migration workbooks, configuration tables, middleware filters, DMN files, or runtime-specific rule editors. They are easy to change and difficult to review: conflicts hide between rows, boundary cases are tested manually, provenance disappears, related decisions drift apart, and a pull request cannot explain what business behavior or downstream decision may change.
 
 Decision Tables as Code (`dtac`) provides a small vendor-neutral model and deterministic CLI so decision logic can be treated like source code without becoming unreadable to functional and business reviewers.
 
@@ -11,6 +11,7 @@ Decision Tables as Code (`dtac`) provides a small vendor-neutral model and deter
 | Problem | Guide | Runnable example |
 | --- | --- | --- |
 | Validate an Excel rule workbook | [Excel decision table validation](docs/use-cases/excel-decision-table-validation.md) | `examples/order-routing.csv` |
+| Connect multiple decisions and trace downstream impact | [Decision packages](docs/decision-packages.md) | `examples/package/order-approval/package.yaml` |
 | Import/export an ordinary DMN 1.4 decision table | [DMN 1.4 subset](docs/dmn.md) | `examples/dmn/routing-unique.dmn` |
 | Test approval/release thresholds | [Approval matrix](docs/use-cases/approval-matrix.md) | `examples/sap/approval-matrix.yaml` |
 | Govern master-data derivations | [Master-data derivation](docs/use-cases/master-data-derivation.md) | `examples/sap/customer-account-group-derivation.yaml` |
@@ -35,11 +36,15 @@ See the [documentation home](docs/index.md), [architecture](docs/architecture.md
 - executable scenario packs, including explicit `as_of` cutover cases
 - classified semantic diff: `breaking`, `potentially_breaking`, `non_breaking`, `governance_only`
 - machine-readable `dtac inspect` and rule-level `dtac explain`
+- multi-table decision packages with explicit dependencies and output-to-input bindings
+- package validation, cycle detection, deterministic topological execution, terminal outputs, and type-safe bindings
+- dependency graph output in JSON, Graphviz DOT, and Mermaid
+- transitive `package-impact` and package-level semantic/dependency diff
 - CSV/XLSX import with explicit column mapping
 - strict DMN 1.4 import/export subset for UNIQUE/FIRST tables with explicit unsupported-semantics failures
 - deterministic Markdown/standalone HTML business-review reports
 - SARIF 2.1.0 and GitHub Actions annotations
-- JSON Schema and CI-ready CLI
+- JSON Schemas for tables and package manifests
 - runnable SAP-oriented derivation, classification, replication-filter, and approval examples
 - documented SAP/BRFplus adapter boundary without pretending generic SAP deployment compatibility
 
@@ -92,6 +97,42 @@ dtac render examples/order-routing-v2.yaml \
   --format html \
   --output order-routing-change.html
 ```
+
+## Multi-table decision systems
+
+A package manifest connects decisions without making all outputs globally visible:
+
+```yaml
+version: 1
+id: order-approval-flow
+tables:
+  - id: risk-classification
+    path: risk-classification.yaml
+  - id: approval-decision
+    path: approval-decision.yaml
+    depends_on:
+      - table: risk-classification
+        bind:
+          risk_level: risk_level
+```
+
+Validate and execute the three-stage runnable example:
+
+```bash
+dtac package-validate examples/package/order-approval/package.yaml
+
+dtac package-eval examples/package/order-approval/package.yaml \
+  --facts '{"customer_tier":"VIP","blocked":false,"amount":500,"region":"EU"}'
+```
+
+Inspect transitive impact when an upstream decision changes:
+
+```bash
+dtac package-impact examples/package/order-approval/package.yaml \
+  --changed risk-classification
+```
+
+The example reports both `approval-decision` and `fulfillment-route` as downstream impacted. Graph output is available as JSON, DOT, or Mermaid. See [multi-table decision packages](docs/decision-packages.md).
 
 ## Excel to Git
 
@@ -151,16 +192,17 @@ The [SAP / BRFplus interoperability guide](docs/sap-brfplus.md) defines the conc
 DTAC governs the portable layer before runtime deployment:
 
 ```text
-source -> canonical decision table -> validate/test/coverage/diff -> review -> target adapter
+source -> canonical decision tables -> single-table checks / package graph -> review -> target adapter
 ```
 
-The target runtime may be BRFplus, DMN, ABAP, workflow, middleware, or custom code. DTAC does not claim those systems have identical semantics. A target adapter must explicitly prove that the table's types, operators, hit policy, provenance, and effective-date behavior are representable.
+The target runtime may be BRFplus, DMN, ABAP, workflow, middleware, or custom code. DTAC does not claim those systems have identical semantics. A target adapter must explicitly prove that the table's types, operators, hit policy, provenance, effective-date behavior, and package dataflow are representable.
 
 See [architecture](docs/architecture.md) and the [staged adoption guide](docs/adoption-guide.md).
 
 ## Reference
 
 - [CLI reference](docs/cli-reference.md) — generated from the actual parser and checked in CI
+- [multi-table decision packages](docs/decision-packages.md)
 - [DMN 1.4 interoperability subset](docs/dmn.md)
 - [v1 specification](docs/specification.md)
 - [diagnostics](docs/diagnostics.md)
@@ -183,6 +225,6 @@ See [architecture](docs/architecture.md) and the [staged adoption guide](docs/ad
 
 ## Roadmap and status
 
-Working MVP. The model and CLI are usable, but v1 is still pre-stable. Multi-table decision graphs, generated runtime adapters, and stronger compatibility proofs remain roadmap work.
+Working MVP. The model and CLI are usable, but v1 is still pre-stable. Generated runtime adapters, organization policy packs, release bundles, and stronger compatibility proofs remain roadmap work.
 
 See [ROADMAP.md](ROADMAP.md).
