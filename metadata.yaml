@@ -30,6 +30,9 @@ capabilities:
   - executable-scenarios
   - overlap-analysis
   - first-policy-shadow-analysis
+  - business-review-rendering
+  - markdown-html-reports
+  - semantic-fingerprints
   - cli
   - json-schema
   - ci
