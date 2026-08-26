@@ -106,6 +106,18 @@ dtac inspect <table> [--output <output>]
 | `table` | yes | — | — | — |
 | `--output` `<output>` | no | — | — | Write JSON inspection output to a file instead of stdout |
 
+## `dtac js-export`
+
+```text
+dtac js-export <table> [--output <output>] [--types-output <types-output>]
+```
+
+| Argument | Required | Default | Choices | Help |
+| --- | --- | --- | --- | --- |
+| `table` | yes | — | — | — |
+| `--output` `<output>` | no | — | — | Write JavaScript ESM to a file instead of stdout |
+| `--types-output` `<types-output>` | no | — | — | Also write a TypeScript declaration file |
+
 ## `dtac package-diff`
 
 ```text
