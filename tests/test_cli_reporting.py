@@ -132,3 +132,81 @@ rules:
     assert exit_code == 2
     assert report["provable"] is False
     assert report["blocking_reasons"][0]["code"] == "missing_finite_domain"
+
+
+def test_policy_check_text_shows_warning_findings_without_failing(tmp_path, capsys):
+    table = tmp_path / "table.yaml"
+    table.write_text(
+        """version: 1
+id: warning-table
+hit_policy: unique
+inputs:
+  - name: country
+    type: string
+outputs:
+  - name: route
+    type: string
+rules:
+  - id: de
+    when: {country: DE}
+    then: {route: eu}
+""",
+        encoding="utf-8",
+    )
+    policy = tmp_path / "warning-policy.yaml"
+    policy.write_text(
+        """version: 1
+id: provenance-warning
+severity: warning
+rules:
+  required_rule_fields: [owner]
+""",
+        encoding="utf-8",
+    )
+
+    exit_code = main(["policy-check", str(table), "--policy", str(policy)])
+    rendered = capsys.readouterr().out
+
+    assert exit_code == 0
+    assert "WARNING" in rendered
+    assert "POL004" in rendered
+    assert "[provenance-warning]" in rendered
+    assert "rules[0].owner" in rendered
+    assert not rendered.startswith("OK ")
+
+
+def test_policy_check_text_keeps_ok_for_zero_findings(tmp_path, capsys):
+    table = tmp_path / "table.yaml"
+    table.write_text(
+        """version: 1
+id: clean-table
+hit_policy: unique
+inputs:
+  - name: country
+    type: string
+outputs:
+  - name: route
+    type: string
+rules:
+  - id: de
+    when: {country: DE}
+    then: {route: eu}
+""",
+        encoding="utf-8",
+    )
+    policy = tmp_path / "clean-policy.yaml"
+    policy.write_text(
+        """version: 1
+id: simple-policy
+severity: warning
+rules:
+  max_rules: 10
+""",
+        encoding="utf-8",
+    )
+
+    exit_code = main(["policy-check", str(table), "--policy", str(policy)])
+    rendered = capsys.readouterr().out
+
+    assert exit_code == 0
+    assert rendered == "OK clean-table: policies simple-policy passed\n"

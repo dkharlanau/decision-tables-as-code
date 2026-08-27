@@ -1,0 +1,3 @@
+[console_scripts]
+dtac = decision_tables_as_code.cli:main
+dtac-python-export = decision_tables_as_code.runtime_cli:main

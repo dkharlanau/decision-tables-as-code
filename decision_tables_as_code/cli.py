@@ -390,9 +390,7 @@ def _policy_check(
     report = policy_report(table, policies, validate_table(table))
     if output_format == "json":
         rendered = json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False, default=str) + "\n"
-    elif report["ok"]:
-        rendered = f"OK {table.id}: policies {', '.join(report['policy_ids'])} passed\n"
-    else:
+    elif report["base_validation"] or report["policy_diagnostics"]:
         lines: list[str] = []
         for item in report["base_validation"]:
             lines.append(f"{item['severity'].upper():7} {item['code']} {item['path']}: {item['message']}\n")
@@ -401,6 +399,8 @@ def _policy_check(
                 f"{item['severity'].upper():7} {item['code']} [{item['policy_id']}] {item['path']}: {item['message']}\n"
             )
         rendered = "".join(lines)
+    else:
+        rendered = f"OK {table.id}: policies {', '.join(report['policy_ids'])} passed\n"
     return _emit(rendered, output_path, error_status=0 if report["ok"] else 1)
 
 
