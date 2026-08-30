@@ -29,10 +29,27 @@ jobs:
           cp docs/product.html _site/index.html
           cp docs/agent-manifest.json _site/agent-manifest.json
           touch _site/.nojekyll
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+      - name: Detect Pages availability
+        id: pages
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${GITHUB_REPOSITORY}/pages" >/dev/null 2>&1; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::GitHub Pages is not enabled for this repository. The product site build is valid, but deployment is skipped. Enable Settings > Pages > Source: GitHub Actions to publish it."
+          fi
+      - name: Configure Pages
+        if: steps.pages.outputs.enabled == 'true'
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        if: steps.pages.outputs.enabled == 'true'
+        uses: actions/upload-pages-artifact@v4
         with:
           path: _site
-      - name: Deploy
+      - name: Deploy Pages
+        if: steps.pages.outputs.enabled == 'true'
         id: deployment
         uses: actions/deploy-pages@v4
