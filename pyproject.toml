@@ -17,6 +17,11 @@ classifiers = [
 ]
 dependencies = ["PyYAML>=6.0"]
 
+[project.urls]
+Documentation = "https://dkharlanau.github.io/decision-tables-as-code/"
+Repository = "https://github.com/dkharlanau/decision-tables-as-code"
+Issues = "https://github.com/dkharlanau/decision-tables-as-code/issues"
+
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "openpyxl>=3.1"]
 excel = ["openpyxl>=3.1"]

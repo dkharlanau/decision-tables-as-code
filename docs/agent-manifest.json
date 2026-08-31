@@ -5,14 +5,14 @@
   "human_url": "https://dkharlanau.github.io/decision-tables-as-code/",
   "repository": "https://github.com/dkharlanau/decision-tables-as-code",
   "boundaries": ["not a general-purpose rule engine", "do not invent missing facts", "respect declared rule order and null semantics", "validate before evaluation"],
-  "capabilities": ["validate decision tables", "lint rules", "evaluate supplied facts", "produce explainability traces", "render documentation", "run policy checks", "expose schema"],
+  "capabilities": ["validate decision tables", "evaluate supplied facts", "produce explainability traces", "render business-review reports", "run policy checks", "expose schema"],
   "entrypoints": [
     {"type":"cli","command":"dtac validate <table.yaml>"},
-    {"type":"cli","command":"dtac lint <table.yaml>"},
-    {"type":"cli","command":"dtac run <table.yaml> --facts <facts.json>"},
-    {"type":"cli","command":"dtac explain <table.yaml> --facts <facts.json>"}
+    {"type":"cli","command":"dtac eval <table.yaml> --facts <facts.json>"},
+    {"type":"cli","command":"dtac explain <table.yaml> --facts <facts.json>"},
+    {"type":"cli","command":"dtac render <table.yaml> --format html --output <report.html>"}
   ],
-  "safe_agent_loop": ["read table and manifest", "validate and lint", "confirm facts are supplied", "evaluate", "return decision plus matching rule/trace", "surface missing or invalid facts explicitly"],
+  "safe_agent_loop": ["read table and manifest", "validate", "confirm facts are supplied", "evaluate", "return decision plus matching rule/trace", "surface missing or invalid facts explicitly"],
   "related": [
     {"product":"process-as-code","relationship":"embed decisions in process intent"},
     {"product":"mapping-as-code","relationship":"combine decisions with transformations"},

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
+
+from decision_tables_as_code.cli import build_parser
 
 
 ROOT = Path(__file__).parents[1]
@@ -66,3 +69,30 @@ def test_use_case_gallery_points_to_runnable_examples():
 
     missing = [path for path in required if not (ROOT / path).is_file()]
     assert not missing, "Missing use-case examples: " + ", ".join(missing)
+
+
+def test_agent_entrypoints_use_supported_cli_commands():
+    manifest = json.loads((ROOT / "docs" / "agent-manifest.json").read_text(encoding="utf-8"))
+    parser = build_parser()
+    command_action = next(action for action in parser._actions if action.dest == "command")
+    supported = set(command_action.choices)
+
+    advertised = {
+        entry["command"].split()[1]
+        for entry in manifest["entrypoints"]
+        if entry.get("type") == "cli"
+    }
+
+    assert advertised <= supported
+
+
+def test_public_agent_guidance_does_not_advertise_retired_commands():
+    public_guidance = "\n".join(
+        [
+            (ROOT / "AGENTS.md").read_text(encoding="utf-8"),
+            (ROOT / "docs" / "product.html").read_text(encoding="utf-8"),
+        ]
+    )
+
+    for command in ("dtac lint ", "dtac run ", "dtac doc "):
+        assert command not in public_guidance
