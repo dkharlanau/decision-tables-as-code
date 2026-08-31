@@ -14,8 +14,9 @@
   ],
   "safe_agent_loop": ["read table and manifest", "validate", "confirm facts are supplied", "evaluate", "return decision plus matching rule/trace", "surface missing or invalid facts explicitly"],
   "related": [
-    {"product":"process-as-code","relationship":"embed decisions in process intent"},
-    {"product":"mapping-as-code","relationship":"combine decisions with transformations"},
-    {"product":"enterprise-change-graph","relationship":"trace rule-change impact"}
+    {"product":"process-as-code","relationship":"reference a governed table from a process step through generic artifact traceability; Process as Code does not execute DTAC rules"},
+    {"product":"interface-as-code","relationship":"keep operational interface semantics separate from routing or classification decisions; no automatic binding"},
+    {"product":"mapping-as-code","relationship":"keep field transformation intent separate from bounded business decisions"},
+    {"product":"reconciliation-as-code","relationship":"prove resulting business state independently; no DTAC runtime handoff"}
   ]
 }

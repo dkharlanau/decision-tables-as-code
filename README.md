@@ -267,15 +267,22 @@ See [architecture](docs/architecture.md) and the [staged adoption guide](docs/ad
 
 ## Related projects
 
-- [Mapping as Code](https://github.com/dkharlanau/mapping-as-code)
-- [Transformation Graph](https://github.com/dkharlanau/transformation-graph)
-- [Interface as Code](https://github.com/dkharlanau/interface-as-code)
-- [Reconciliation as Code](https://github.com/dkharlanau/reconciliation-as-code)
-- [Process as Code](https://github.com/dkharlanau/process-as-code)
-- [Enterprise Change Graph](https://github.com/dkharlanau/enterprise-change-graph)
+See [Decision Tables as Code in the as-code suite](docs/as-code-suite.md) for the implemented handoff boundaries.
+
+- [Process as Code](https://github.com/dkharlanau/process-as-code) — reference a governed decision from the process step where it is used; Process as Code resolves the artifact but does not execute DTAC rules.
+- [Interface as Code](https://github.com/dkharlanau/interface-as-code) — keep delivery, retry, monitoring, and operational ownership outside routing or classification tables.
+- [Mapping as Code](https://github.com/dkharlanau/mapping-as-code) — govern source-to-target field transformation separately from bounded decisions.
+- [Reconciliation as Code](https://github.com/dkharlanau/reconciliation-as-code) — prove resulting business state with explicit controls; no DTAC-to-reconciliation runtime adapter is implied.
 
 ## Roadmap and status
 
 Working MVP. The model and CLI are usable, but v1 is still pre-stable. Organization policy packs and stronger compatibility proofs remain roadmap work.
 
 See [ROADMAP.md](ROADMAP.md).
+
+## About the author
+
+Created and maintained by **Dzmitryi Kharlanau**, an SAP consultant and system analyst working across enterprise architecture, data, integration, operations, and practical AI.
+
+- [Website and knowledge base](https://dkharlanau.github.io/)
+- [LinkedIn](https://www.linkedin.com/in/dkharlanau/)

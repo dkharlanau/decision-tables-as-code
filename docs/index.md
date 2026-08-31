@@ -88,6 +88,7 @@ See [architecture](architecture.md) for the product boundary and [adoption guide
 - [Business review reports](review-reports.md)
 - [GitHub integration](github-integration.md)
 - [CI integration](ci.md)
+- [As-code suite handoffs](as-code-suite.md)
 
 ## Search vocabulary
 
