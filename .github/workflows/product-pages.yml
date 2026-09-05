@@ -44,6 +44,8 @@ jobs:
       - name: Configure Pages
         if: steps.pages.outputs.enabled == 'true'
         uses: actions/configure-pages@v5
+      - name: Add consent-aware portfolio analytics
+        run: node scripts/inject-portfolio-analytics.mjs _site
       - name: Upload Pages artifact
         if: steps.pages.outputs.enabled == 'true'
         uses: actions/upload-pages-artifact@v4
