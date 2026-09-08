@@ -1,0 +1,26 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dkharlanau/agent-ready-web-profile/v0.1.0/schema/site-profile.schema.json",
+  "profileVersion": "0.1",
+  "id": "decision-tables-as-code",
+  "name": "Decision Tables as Code",
+  "canonicalUrl": "https://dkharlanau.github.io/decision-tables-as-code/",
+  "description": "Evaluate bounded business decisions from explicit facts using deterministic, explainable decision tables.",
+  "languages": [
+    "en"
+  ],
+  "trust": {
+    "provenance": "https://github.com/dkharlanau/decision-tables-as-code/blob/main/README.md",
+    "license": "https://github.com/dkharlanau/decision-tables-as-code/blob/main/LICENSE"
+  },
+  "data": {
+    "distributions": [
+      {
+        "name": "Project agent manifest",
+        "url": "https://dkharlanau.github.io/decision-tables-as-code/agent-manifest.json",
+        "mediaType": "application/json",
+        "role": "other",
+        "description": "Source-backed project scope and local CLI entrypoints; this is not a hosted execution endpoint."
+      }
+    ]
+  }
+}
